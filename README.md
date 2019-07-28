@@ -44,7 +44,7 @@ int main() {
 		cout << "itm.b : " << itm.b << endl;
 	}
 
-	//make some object handle, not we must have a handle to an item or else the item would get instantly destroyed
+	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
 	auto hdl3 = map.insert(slot_data{100, 90});
 	auto hdl4 = map.insert(slot_data{150, 95});
 	auto hdl5 = map.insert(slot_data{200, 100});
