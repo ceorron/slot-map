@@ -4,7 +4,7 @@ Features
  - fast, constant time object lookup/erase using array indexes
  - v.fast insert, insert doesn't invalidate other handles on slot_map resize
  - no memory fragmentation, only contiguous memory used
- - object, destruction notification, objects can be created/destroyed by any other object/code
+ - destruction notification, objects can be created/destroyed by any other object/code
  - iterate over full map, fast as contiguous only storage
 
 MIT Licence - See Source/License file
