@@ -17,7 +17,9 @@ MIT Licence - See Source/License file
 
 # TODO
  - [#] weak and strong handles on slot_map/ordered_slot_map
- - [#] change generation_data to remove 0 generations
+ - [#] change generation_data to remove 0'th generations
+ - [#] add template locking mechanism (std::mutex) for generation_data
+ - [#] more generation_data testing
 
 # Example use - C++
 
@@ -225,4 +227,3 @@ ceorron
 aka
 
 Richard Cookman
-
