@@ -2,7 +2,7 @@
  |																					|
  | slot_map.hpp 																	|
  |																					|
- | Author: (C) Copyright Richard Cookman, Eyra Software Systems 2019				|
+ | Author: (C) Copyright Richard Cookman											|
  |																					|
  | Permission is hereby granted, free of charge, to any person obtaining a copy		|
  | of this software and associated documentation files (the "Software"), to deal	|
@@ -27,10 +27,10 @@
 
 #include <limits>
 #include <vector>
+#include <string.h>
+#include "generation_data.hpp"
 
 namespace std {
-
-#define slot_map_invalid	(unsigned)-1
 
 template<typename T,
 		 typename Alloc>
@@ -40,8 +40,11 @@ namespace slot_internal {
 
 template<typename T>
 struct slot {
-	bool valid = false;
-	alignas(alignof(T)) char obj[sizeof(T)];
+	slot_internal::generation_data<uint32_t> gens;
+	union slot_data {
+		unsigned next;								//used when object doesn't exist to reference the next object to allocate
+		alignas(alignof(T)) char obj[sizeof(T)];
+	} unn;
 };
 
 }
@@ -68,21 +71,22 @@ private:
 	friend struct slot_map_reverse_iterator<T, Alloc>;
 	friend struct slot_map_const_reverse_iterator<T, Alloc>;
 
-	slot_map_iterator(const typename std::vector<slot_internal::slot<T>, Alloc>::iterator& it)
-		: itr(it)
+	slot_map_iterator(slot_map<T, Alloc>* mp,
+					  const typename std::vector<slot_internal::slot<T>, Alloc>::iterator& it)
+		: map(mp), itr(it)
 	{}
 public:
 	slot_map_iterator() = default;
 	inline T& operator*() {
-		return *(T*)itr->obj;
+		return *(T*)itr->unn.obj;
 	}
 	inline T* operator->() {
-		return (T*)itr->obj;
+		return (T*)itr->unn.obj;
 	}
-	inline slot_map_iterator& operator++() {
+	slot_map_iterator& operator++() {
 		do {
 			++itr;
-		} while(!itr->valid);
+		} while(*this != map->end() && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_iterator operator++(int) {
@@ -90,10 +94,13 @@ public:
 		++*this;
 		return it;
 	}
-	inline slot_map_iterator& operator--() {
+	slot_map_iterator& operator--() {
+		bool end = false;
 		do {
+			if(*this == map->begin())
+				end = true;
 			--itr;
-		} while(!itr->valid);
+		} while(end && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_iterator operator--(int) {
@@ -121,13 +128,13 @@ public:
 	}
 
 	inline operator slot_map_const_iterator<T, Alloc>() const {
-		return slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
+		return slot_map_const_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
 	}
 	inline operator slot_map_reverse_iterator<T, Alloc>() const {
-		return slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
+		return slot_map_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
 	}
 	inline operator slot_map_const_reverse_iterator<T, Alloc>() const {
-		return slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
+		return slot_map_const_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
@@ -135,7 +142,7 @@ template<typename T,
 		 typename Alloc = std::allocator<T>>
 struct slot_map_const_iterator {
 private:
-	slot_map<T, Alloc>* map;
+	const slot_map<T, Alloc>* map;
 	typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator itr;
 
 	friend struct slot_map<T, Alloc>;
@@ -144,21 +151,22 @@ private:
 	friend struct slot_map_reverse_iterator<T, Alloc>;
 	friend struct slot_map_const_reverse_iterator<T, Alloc>;
 
-	slot_map_const_iterator(const typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator& it)
-		: itr(it)
+	slot_map_const_iterator(const slot_map<T, Alloc>* mp,
+							const typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator& it)
+		: map(mp), itr(it)
 	{}
 public:
 	slot_map_const_iterator() = default;
 	inline T& operator*() {
-		return *(T*)itr->obj;
+		return *(T*)itr->unn.obj;
 	}
 	inline T* operator->() {
-		return (T*)itr->obj;
+		return (T*)itr->unn.obj;
 	}
-	inline slot_map_const_iterator& operator++() {
+	slot_map_const_iterator& operator++() {
 		do {
 			++itr;
-		} while(!itr->valid);
+		} while(*this != map->cend() && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_const_iterator operator++(int) {
@@ -166,10 +174,13 @@ public:
 		++*this;
 		return it;
 	}
-	inline slot_map_const_iterator& operator--() {
+	slot_map_const_iterator& operator--() {
+		bool end = false;
 		do {
+			if(*this == map->cbegin())
+				end = true;
 			--itr;
-		} while(!itr->valid);
+		} while(end && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_const_iterator operator--(int) {
@@ -197,13 +208,13 @@ public:
 	}
 
 	inline operator slot_map_iterator<T, Alloc>() const {
-		return slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
+		return slot_map_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
 	}
 	inline operator slot_map_reverse_iterator<T, Alloc>() const {
-		return slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
+		return slot_map_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
 	}
 	inline operator slot_map_const_reverse_iterator<T, Alloc>() const {
-		return slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
+		return slot_map_const_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
@@ -220,21 +231,22 @@ private:
 	friend struct slot_map_const_iterator<T, Alloc>;
 	friend struct slot_map_const_reverse_iterator<T, Alloc>;
 
-	slot_map_reverse_iterator(const typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator& it)
-		: itr(it)
+	slot_map_reverse_iterator(slot_map<T, Alloc>* mp,
+							  const typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator& it)
+		: map(mp), itr(it)
 	{}
 public:
 	slot_map_reverse_iterator() = default;
 	inline T& operator*() {
-		return *(T*)itr->obj;
+		return *(T*)itr->unn.obj;
 	}
 	inline T* operator->() {
-		return (T*)itr->obj;
+		return (T*)itr->unn.obj;
 	}
-	inline slot_map_reverse_iterator& operator++() {
+	slot_map_reverse_iterator& operator++() {
 		do {
 			++itr;
-		} while(!itr->valid);
+		} while(*this != map->rend() && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_reverse_iterator operator++(int) {
@@ -242,10 +254,13 @@ public:
 		++*this;
 		return it;
 	}
-	inline slot_map_reverse_iterator& operator--() {
+	slot_map_reverse_iterator& operator--() {
+		bool end = false;
 		do {
+			if(*this == map->rbegin())
+				end = true;
 			--itr;
-		} while(!itr->valid);
+		} while(end && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_reverse_iterator operator--(int) {
@@ -273,13 +288,13 @@ public:
 	}
 
 	inline operator slot_map_iterator<T, Alloc>() const {
-		return slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
+		return slot_map_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
 	}
 	inline operator slot_map_const_iterator<T, Alloc>() const {
-		return slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
+		return slot_map_const_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
 	}
 	inline operator slot_map_const_reverse_iterator<T, Alloc>() const {
-		return slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
+		return slot_map_const_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
@@ -287,7 +302,7 @@ template<typename T,
 		 typename Alloc = std::allocator<T>>
 struct slot_map_const_reverse_iterator {
 private:
-	slot_map<T, Alloc>* map;
+	const slot_map<T, Alloc>* map;
 	typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator itr;
 
 	friend struct slot_map<T, Alloc>;
@@ -296,21 +311,22 @@ private:
 	friend struct slot_map_const_iterator<T, Alloc>;
 	friend struct slot_map_reverse_iterator<T, Alloc>;
 
-	slot_map_const_reverse_iterator(const typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator& it)
-		: itr(it)
+	slot_map_const_reverse_iterator(const slot_map<T, Alloc>* mp,
+									const typename std::vector<slot_internal::slot<T>, Alloc>::const_reverse_iterator& it)
+		: map(mp), itr(it)
 	{}
 public:
 	slot_map_const_reverse_iterator() = default;
 	inline T& operator*() {
-		return *(T*)itr->obj;
+		return *(T*)itr->unn.obj;
 	}
 	inline T* operator->() {
-		return (T*)itr->obj;
+		return (T*)itr->unn.obj;
 	}
-	inline slot_map_const_reverse_iterator& operator++() {
+	slot_map_const_reverse_iterator& operator++() {
 		do {
 			++itr;
-		} while(!itr->valid);
+		} while(*this != map->crend() && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_const_reverse_iterator operator++(int) {
@@ -318,10 +334,13 @@ public:
 		++*this;
 		return it;
 	}
-	inline slot_map_const_reverse_iterator& operator--() {
+	slot_map_const_reverse_iterator& operator--() {
+		bool end = false;
 		do {
+			if(*this == map->crbegin())
+				end = true;
 			--itr;
-		} while(!itr->valid);
+		} while(end && !itr->gens.is_valid());
 		return *this;
 	}
 	inline slot_map_const_reverse_iterator operator--(int) {
@@ -349,13 +368,13 @@ public:
 	}
 
 	inline operator slot_map_iterator<T, Alloc>() const {
-		return slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
+		return slot_map_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::iterator(itr));
 	}
 	inline operator slot_map_const_iterator<T, Alloc>() const {
-		return slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
+		return slot_map_const_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::const_iterator(itr));
 	}
 	inline operator slot_map_reverse_iterator<T, Alloc>() const {
-		return slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
+		return slot_map_reverse_iterator<T, Alloc>(map, typename std::vector<slot_internal::slot<T>, Alloc>::reverse_iterator(itr));
 	}
 };
 
@@ -364,31 +383,32 @@ template<typename T,
 struct slot_map_handle {
 private:
 	slot_map<T, Alloc>* map = 0;
-	unsigned idx = slot_map_invalid;
+	unsigned idx = 0;
+	unsigned gen = 0;
 
 	friend struct slot_map<T, Alloc>;
 
 	inline void clear() {
 		map = 0;
-		idx = slot_map_invalid;
+		idx = 0;
+		gen = 0;
 	}
 
 public:
 	slot_map_handle() = default;
 
 	slot_map_handle(const slot_map_handle& rhs)
-		: map(0), idx(slot_map_invalid) {
-		if(rhs.map && rhs.map->is_valid(const_cast<slot_map_handle&>(rhs))) {
+		: map(0), idx(0), gen(0) {
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_map_handle&>(rhs))) {
 			map = rhs.map;
 			idx = rhs.idx;
-
-			if(map && idx != slot_map_invalid)
-				map->increment_handle(*this);
+			gen = rhs.gen;
 		}
 	}
 	slot_map_handle(slot_map_handle&& rhs) {
 		map = rhs.map;
 		idx = rhs.idx;
+		gen = rhs.gen;
 
 		rhs.clear();
 	}
@@ -399,12 +419,10 @@ public:
 
 		this->~slot_map_handle();
 
-		if(rhs.map && rhs.map->is_valid(const_cast<slot_map_handle&>(rhs))) {
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_map_handle&>(rhs))) {
 			map = rhs.map;
 			idx = rhs.idx;
-
-			if(map && idx != slot_map_invalid)
-				map->increment_handle(*this);
+			gen = rhs.gen;
 		}
 		return *this;
 	}
@@ -416,13 +434,14 @@ public:
 
 		map = rhs.map;
 		idx = rhs.idx;
+		gen = rhs.gen;
 
 		rhs.clear();
 		return *this;
 	}
 
 	~slot_map_handle() {
-		if(map && idx != slot_map_invalid)
+		if(map)
 			map->decrement_handle(*this);
 		clear();
 	}
@@ -453,17 +472,10 @@ template<typename T,
 		 typename Alloc = std::allocator<T>>
 struct slot_map {
 private:
-	struct slot_ref {
-		unsigned count = 0;
-		unsigned idx = slot_map_invalid;
-	};
-
-	unsigned itemcount = 0;
-	unsigned idxcount = 0;
-	unsigned nextitem = 0;
-	unsigned nextidx = 0;
+	unsigned count = 0;
+	slot_internal::slot<T>* firstslot = 0;
+	slot_internal::slot<T>* lastslot = 0;
 	std::vector<slot_internal::slot<T>, Alloc> items;
-	std::vector<slot_ref, Alloc> idxs;
 
 	friend struct slot_map_iterator<T, Alloc>;
 	friend struct slot_map_const_iterator<T, Alloc>;
@@ -471,16 +483,40 @@ private:
 	friend struct slot_map_const_reverse_iterator<T, Alloc>;
 
 	friend struct slot_map_handle<T, Alloc>;
+
+	void extend(unsigned extnd) {
+		if(extnd == 0)
+			return;
+
+		unsigned csze = items.size();
+		items.resize(csze + extnd);
+
+		unsigned nxt = 0;
+		if(firstslot)
+			nxt = std::distance(&items[0], firstslot);
+
+		//append all of the new items onto the front of the slot list
+		memset((void*)&items[csze], 0, sizeof(slot_internal::slot<T>) * extnd);
+		for(unsigned i = csze; i < csze + extnd; ++i)
+			if(i == csze + extnd - 1)
+				items[i].unn.next = nxt;
+			else
+				items[i].unn.next = i + 1;
+
+		firstslot = &items[csze];
+		if(nxt == 0)
+			lastslot = &items[csze + extnd - 1];
+	}
+
 public:
 	slot_map(unsigned slots = 50) {
-		items.resize(slots);
-		idxs.resize(slots);
+		extend(slots);
 	}
-	slot_map(const slot_map& rhs) = default;
-	slot_map(slot_map& rhs) = default;
+	slot_map(const slot_map& rhs) = delete;
+	slot_map(slot_map&& rhs) = delete;
 
-	slot_map& operator=(const slot_map& rhs) = default;
-	slot_map& operator=(slot_map& rhs) = default;
+	slot_map& operator=(const slot_map& rhs) = delete;
+	slot_map& operator=(slot_map&& rhs) = delete;
 
 	//same as normal vector
 	typedef T value_type;
@@ -498,22 +534,38 @@ public:
 	typedef slot_map_handle<T, Alloc> handle;
 
 private:
-	void increment_handle(slot_map_handle<T, Alloc>& hdl) {
-		if(is_valid(hdl))
-			++idxs[hdl.idx].count;
+	void destruct_object(slot_internal::slot<T>* obj) {
+		//remove object
+		obj->gens.set_invalid();
+		((T*)obj->unn.obj)->~T();
+
+		//add to the start of the free list
+		if(firstslot == 0) {
+			obj->unn.next = 0;
+			firstslot = obj;
+			lastslot = obj;
+		} else {
+			obj->unn.next = std::distance(&items[0], firstslot);
+			firstslot = obj;
+		}
+		--count;
+	}
+	bool increment_handle(slot_map_handle<T, Alloc>& hdl) {
+		slot_internal::slot<T>* obj = get_object_internal(hdl);
+		if(obj) {
+			++obj->gens.get_generation_count(hdl.gen);
+			return true;
+		}
+		return false;
 	}
 	void decrement_handle(slot_map_handle<T, Alloc>& hdl) {
-		//in the destructor of hdl
-		if(is_valid(hdl)) {
-			slot_ref& rf = idxs[hdl.idx];
-			--rf.count;
-			if(rf.count == 0) {
-				--idxcount;
-				slot_internal::slot<T>& slt = items[rf.idx];
-				slt.valid = false;
-				((T*)slt.obj)->~T();
-				rf.idx = slot_map_invalid;
-				--itemcount;
+		slot_internal::slot<T>* obj = get_object_internal(hdl);
+		if(obj) {
+			unsigned& cnt = obj->gens.get_generation_count(hdl.gen);
+			--cnt;
+			if(cnt == 0) {
+				destruct_object(obj);
+				hdl.clear();
 			}
 		}
 	}
@@ -521,47 +573,47 @@ public:
 
 	// iterators:
 	inline iterator begin() noexcept {
-		return iterator(items.begin());
+		return iterator(this, items.begin());
 	}
 	inline const_iterator begin() const noexcept {
-		return const_iterator(items.begin());
+		return const_iterator(this, items.begin());
 	}
 	inline iterator end() noexcept {
-		return iterator(items.end());
+		return iterator(this, items.end());
 	}
 	inline const_iterator end() const noexcept {
-		return const_iterator(items.end());
+		return const_iterator(this, items.end());
 	}
 
 	inline reverse_iterator rbegin() noexcept {
-		return reverse_iterator(items.rbegin());
+		return reverse_iterator(this, items.rbegin());
 	}
 	inline const_reverse_iterator rbegin() const noexcept {
-		return const_reverse_iterator(items.rbegin());
+		return const_reverse_iterator(this, items.rbegin());
 	}
 	inline reverse_iterator rend() noexcept {
-		return reverse_iterator(items.rend());
+		return reverse_iterator(this, items.rend());
 	}
 	inline const_reverse_iterator rend() const noexcept {
-		return const_reverse_iterator(items.rend());
+		return const_reverse_iterator(this, items.rend());
 	}
 
 	inline const_iterator cbegin() const noexcept {
-		return const_iterator(items.cbegin());
+		return const_iterator(this, items.cbegin());
 	}
 	inline const_iterator cend() const noexcept {
-		return const_iterator(items.cend());
+		return const_iterator(this, items.cend());
 	}
 	inline const_reverse_iterator crbegin() const noexcept {
-		return const_reverse_iterator(items.crbegin());
+		return const_reverse_iterator(this, items.crbegin());
 	}
 	inline const_reverse_iterator crend() const noexcept {
-		return const_reverse_iterator(items.crend());
+		return const_reverse_iterator(this, items.crend());
 	}
 
 	// capacity:
 	inline size_type size() const noexcept {
-		return itemcount;
+		return count;
 	}
 	inline size_type max_size() const noexcept {
 		return std::numeric_limits<size_type>::max();
@@ -569,81 +621,62 @@ public:
 	void resize(size_type sz) {
 		if(sz < items.size())
 			return;
-		items.resize(sz);
-		idxs.resize(sz);
+		extend(sz - items.size());
 	}
 	inline size_type capacity() const noexcept {
 		return items.capacity();
 	}
 	void reserve(size_type n) {
-		items.resize(n);
-		idxs.resize(n);
+		items.reserve(n);
 	}
 	inline bool empty() const noexcept {
 		return size() == 0;
 	}
-	void shrink_to_fit() {
+	inline void shrink_to_fit() {
 		items.shrink_to_fit();
-		idxs.shrink_to_fit();
 	}
 
 private:
-	void get_next_free(unsigned& itemPos, unsigned& idxPos) {
-		//resize if we are out of slots
-		if(idxcount == idxs.size()) {
-			//move the indexes to reference the free ones
-			nextitem = idxs.size();
-			nextidx = idxs.size();
-			items.resize(idxs.size() * 2);
-			idxs.resize(idxs.size() * 2);
-		}
-		//the allocation function
-		itemPos = nextitem;
-		idxPos = nextidx;
+	unsigned get_next_free() {
+		if(count == items.size())
+			//double the size
+			extend(items.size());
 
-		items[itemPos].valid = true;
-		idxs[idxPos].count = 1;
-		idxs[idxPos].idx = itemPos;
+		unsigned pos = std::distance(&items[0], firstslot);
 
-		++itemcount;
-		++idxcount;
+		slot_internal::slot<T>* nxt = &items[firstslot->unn.next];
+		if(firstslot == lastslot)
+			nxt = 0;
 
-		//get the next item and index
-		do {
-			++nextitem;
-			if(nextitem == items.size())
-				nextitem = 0;
-		} while(items[nextitem].valid);
-
-		do {
-			++nextidx;
-			if(nextidx == idxs.size())
-				nextidx = 0;
-		} while(idxs[nextidx].count > 0);
+		if(nxt == 0) {
+			firstslot = 0;
+			lastslot = 0;
+		} else
+			firstslot = nxt;
+		++count;
+		return pos;
 	}
 public:
 	slot_map_handle<T, Alloc> insert(const T& val) {
-		unsigned itemPos = 0;
-		unsigned idxPos = 0;
-		get_next_free(itemPos, idxPos);
+		unsigned itemPos = get_next_free();
 
 		slot_map_handle<T, Alloc> rtn;
 		rtn.map = this;
-		rtn.idx = idxPos;
+		rtn.idx = itemPos;
+		rtn.gen = items[itemPos].gens.new_generation();
 
-		new (items[itemPos].obj) T(val);
+		new (items[itemPos].unn.obj) T(val);
 		return rtn;
 	}
 	slot_map_handle<T, Alloc> insert(T&& val) {
-		unsigned itemPos = 0;
-		unsigned idxPos = 0;
-		get_next_free(itemPos, idxPos);
+		unsigned itemPos = get_next_free();
 
 		slot_map_handle<T, Alloc> rtn;
 		rtn.map = this;
-		rtn.idx = idxPos;
+		rtn.idx = itemPos;
+		rtn.gen = items[itemPos].gens.new_generation();
 
-		new (items[itemPos].obj) T(std::move(val));
+		new (items[itemPos].unn.obj) T(std::move(val));
 		return rtn;
 	}
 	template<typename Itr>
@@ -656,23 +689,16 @@ public:
 
 private:
 	slot_internal::slot<T>* get_object_internal(slot_map_handle<T, Alloc>& hdl) {
-		if(hdl.idx == slot_map_invalid)
+		if(hdl.map == 0)
 			return 0;
-		slot_ref& rf = idxs[hdl.idx];
-		if(rf.idx == slot_map_invalid) {
+		slot_internal::slot<T>& rf = items[hdl.idx];
+		//test that the generation matches
+		if(!rf.gens.is_valid() || !rf.gens.match_generation(hdl.gen)) {
+			rf.gens.decrement_generation(hdl.gen);
 			hdl.clear();
-			--rf.count;
-			if(rf.count == 0) --idxcount;
 			return 0;
 		}
-		slot_internal::slot<T>& slt = items[rf.idx];
-		if(!slt.valid) {
-			hdl.clear();
-			--rf.count;
-			if(rf.count == 0) --idxcount;
-			return 0;
-		}
-		return &items[rf.idx];
+		return &rf;
 	}
 public:
 
@@ -682,45 +708,71 @@ public:
 	T* get_object(slot_map_handle<T, Alloc>& hdl) {
 		slot_internal::slot<T>* obj = get_object_internal(hdl);
 		if(obj)
-			return (T*)obj->obj;
+			return (T*)obj->unn.obj;
 		return 0;
 	}
 	const T* get_object(const slot_map_handle<T, Alloc>& hdl) {
 		slot_internal::slot<T>* obj = get_object_internal(const_cast<slot_map_handle<T, Alloc>&>(hdl));
 		if(obj)
-			return (const T*)obj->obj;
+			return (const T*)obj->unn.obj;
 		return 0;
 	}
 
 	void erase(slot_map_handle<T, Alloc>& hdl) {
 		slot_internal::slot<T>* obj = get_object_internal(hdl);
-		if(obj) {
-			//clear the object
-			obj->valid = false;
-			((T*)obj->obj)->~T();
-			--itemcount;
-
-			//clear the handle too
-			slot_ref& rf = idxs[hdl.idx];
-			hdl.clear();
-			--rf.count;
-			if(rf.count == 0) --idxcount;
-		}
-		return;
+		if(obj)
+			destruct_object(obj);
 	}
 
 	void clear() noexcept {
-		for(auto it = items.begin(); it != items.end(); ++it)
-			if(it->valid) {
-				it->valid = false;
-				((T*)it->obj)->~T();
-			}
+		//just clear the data, erase everything
+		unsigned i = 0;
+		for(auto it = items.begin(); it != items.end(); ++it, ++i) {
+			if(it->gens.is_valid()) {
+				slot_map_handle<T, Alloc> hdl;
+				hdl.map = this;
+				hdl.idx = std::distance(items.begin(), it);
+				hdl.gen = it->gens.increment_generation();
 
-		*this = slot_map(items.size());
+				erase(hdl);
+			}
+			if(i == items.size())
+				items[i].unn.next = 0;
+			else
+				items[i].unn.next = i + 1;
+		}
+
+		firstslot = &items[0];
+		lastslot = &items[items.size() - 1];
+	}
+	void defrag() noexcept {
+		//order the allocations
+		bool set = false;
+		unsigned last = 0;
+
+		firstslot = 0;
+		lastslot = 0;
+
+		for(unsigned i = 0; i < items.size(); ++i)
+			if(!items[i].gens.is_valid()) {
+				lastslot = &items[i];
+				if(!set)
+					firstslot = &items[i];
+				else
+					items[last].unn.next = i;
+
+				last = i;
+				set = true;
+			}
+		if(set)
+			items[last].unn.next = 0;
 	}
 
 	~slot_map() {
-		clear();
+		//erase everything
+		for(auto it = items.begin(); it != items.end(); ++it)
+			if(it->gens.is_valid())
+				((T*)it->unn.obj)->~T();
 	}
 };
 
