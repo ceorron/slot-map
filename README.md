@@ -1,20 +1,9 @@
 # slot-map - std like reference counted slot map implementation
 
-<<<<<<< HEAD
 Features [all slot maps]
  - fast, constant time object lookup/erase/insert O(1) using array indexes, minimal overhead
  - v.fast insert, insert doesn't invalidate other handles on slot_map resize
  - object erase, erase doesn't invalidate other handles on slot_map
-=======
-Features
- - fast, constant time object lookup/erase using array indexes
- - v.fast insert, insert doesn't invalidate other handles on slot_map resize
->>>>>>> branch 'master' of https://github.com/ceorron/slot-map
- - no memory fragmentation, only contiguous memory used
-<<<<<<< HEAD
-=======
- - destruction notification, objects can be created/destroyed by any other object/code
->>>>>>> branch 'master' of https://github.com/ceorron/slot-map
  - iterate over full map, fast as contiguous only storage
  - basic_slot_map replaced by slot_map (faster, smaller memory usage), kept as faster in certain cases
 
@@ -86,13 +75,9 @@ void slot_map_test() {
 		cout << "itm.b : " << itm.b << endl;
 	}
 
-<<<<<<< HEAD
 	cout << "--------------------" << endl;
 
-	//make some object handle, not we must have a handle to an item or else the item would get instantly destroyed
-=======
 	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
->>>>>>> branch 'master' of https://github.com/ceorron/slot-map
 	auto hdl3 = map.insert(slot_data{100, 90});
 	auto hdl4 = map.insert(slot_data{150, 95});
 	auto hdl5 = map.insert(slot_data{200, 100});
@@ -144,7 +129,7 @@ void ordered_slot_map_test() {
 
 	cout << "--------------------" << endl;
 
-	//make some object handle, not we must have a handle to an item or else the item would get instantly destroyed
+	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
 	auto hdl3 = map.insert(slot_data{100, 90});
 	auto hdl4 = map.insert(slot_data{150, 95});
 	auto hdl5 = map.insert(slot_data{200, 100});
@@ -196,7 +181,7 @@ void basic_slot_map_test() {
 
 	cout << "--------------------" << endl;
 
-	//make some object handle, not we must have a handle to an item or else the item would get instantly destroyed
+	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
 	auto hdl3 = map.insert(slot_data{100, 90});
 	auto hdl4 = map.insert(slot_data{150, 95});
 	auto hdl5 = map.insert(slot_data{200, 100});
