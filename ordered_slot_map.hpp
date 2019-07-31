@@ -729,6 +729,7 @@ private:
 		--count;
 	}
 	bool increment_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		lock();
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
 			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
@@ -736,11 +737,14 @@ private:
 				++tmp.weakcount;
 			else
 				++tmp.strongcount;
+			unlock();
 			return true;
 		}
+		unlock();
 		return false;
 	}
 	void decrement_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		lock();
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
 			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
@@ -754,6 +758,7 @@ private:
 				}
 			}
 		}
+		unlock();
 	}
 public:
 
@@ -799,29 +804,47 @@ public:
 
 	// capacity:
 	inline size_type size() const noexcept {
-		return count;
+		lock();
+		size_type rtn = count;
+		unlock();
+		return rtn;
 	}
 	inline size_type max_size() const noexcept {
 		return std::numeric_limits<size_type>::max();
 	}
 	void resize(size_type sz) {
-		if(sz < indexes.size())
+		lock();
+		if(sz < indexes.size()) {
+			unlock();
 			return;
+		}
 		extend(sz - indexes.size());
+		unlock();
 	}
 	inline size_type capacity() const noexcept {
-		return items.capacity();
+		//returns the smaller of the two
+		lock();
+		size_type rtn = items.capacity();
+		unlock();
+		return rtn;
 	}
 	void reserve(size_type n) {
+		lock();
 		items.reserve(n);
 		indexes.reserve(n);
+		unlock();
 	}
 	inline bool empty() const noexcept {
-		return size() == 0;
+		lock();
+		bool rtn = size() == 0;
+		unlock();
+		return rtn;
 	}
 	inline void shrink_to_fit() {
+		lock();
 		items.shrink_to_fit();
 		indexes.shrink_to_fit();
+		unlock();
 	}
 
 private:
@@ -918,6 +941,7 @@ private:
 	}
 public:
 	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val) {
+		lock();
 		size_t idx = get_insert_pos(val);
 		size_t itemPos = get_next_free(idx);
 
@@ -927,10 +951,12 @@ public:
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		unlock();
 		return rtn;
 	}
 	template<typename Less>
 	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val, Less comp) {
+		lock();
 		size_t idx = get_insert_pos(val, comp);
 		size_t itemPos = get_next_free(idx);
 
@@ -940,9 +966,11 @@ public:
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		unlock();
 		return rtn;
 	}
 	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val) {
+		lock();
 		size_t idx = get_insert_pos(std::move(val));
 		size_t itemPos = get_next_free(idx);
 
@@ -952,10 +980,12 @@ public:
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		unlock();
 		return rtn;
 	}
 	template<typename Less>
 	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val, Less comp) {
+		lock();
 		size_t idx = get_insert_pos(std::move(val), comp);
 		size_t itemPos = get_next_free(idx);
 
@@ -965,20 +995,25 @@ public:
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		unlock();
 		return rtn;
 	}
 	template<typename Itr>
 	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end) {
+		lock();
 		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin));
+		unlock();
 		return rtn;
 	}
 	template<typename Itr, typename Less>
 	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end, Less comp) {
+		lock();
 		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin, comp));
+		unlock();
 		return rtn;
 	}
 
@@ -1020,32 +1055,55 @@ private:
 public:
 
 	inline bool is_valid(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
-		return is_valid(hdl, false);
+		lock();
+		bool rtn = is_valid(hdl, false);
+		unlock();
+		return rtn;
 	}
 	inline bool is_valid(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
-		return is_valid(hdl, true);
+		lock();
+		bool rtn = is_valid(hdl, true);
+		unlock();
+		return rtn;
 	}
 	inline T* get_object(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
-		return get_object(hdl, false);
+		lock();
+		T* rtn = get_object(hdl, false);
+		unlock();
+		return rtn;
 	}
 	inline T* get_object(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
-		return get_object(hdl, true);
+		lock();
+		T* rtn = get_object(hdl, true);
+		unlock();
+		return rtn;
 	}
 	inline const T* get_object(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
-		return get_object(hdl, false);
+		lock();
+		const T* rtn = get_object(hdl, false);
+		unlock();
+		return rtn;
 	}
 	inline const T* get_object(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
-		return get_object(hdl, true);
+		lock();
+		const T* rtn = get_object(hdl, true);
+		unlock();
+		return rtn;
 	}
 
 	inline void erase(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
 		erase(hdl, false);
+		unlock();
 	}
 	inline void erase(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+		lock();
 		erase(hdl, true);
+		unlock();
 	}
 
 	void clear() noexcept {
+		lock();
 		//just clear the data, erase everything
 		size_t i = 0;
 		for(auto it = indexes.begin(); it != indexes.end(); ++it, ++i) {
@@ -1065,8 +1123,10 @@ public:
 
 		firstslot = &indexes[0];
 		lastslot = &indexes[indexes.size() - 1];
+		unlock();
 	}
 	void defrag() noexcept {
+		lock();
 		//order the allocations
 		bool set = false;
 		size_t last = 0;
@@ -1087,6 +1147,7 @@ public:
 			}
 		if(set)
 			indexes[last].unn.next = 0;
+		unlock();
 	}
 };
 
