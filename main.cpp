@@ -95,12 +95,33 @@ void slot_map_test() {
 	if(!map.is_valid(hdl2))
 		cout << "hdl2 is invalid" << endl;
 
+	cout << "--------------------" << endl;
+
 	if(map.is_valid(hdl3))
 		cout << "hdl3 is valid" << endl;
 	if(map.is_valid(hdl4))
 		cout << "hdl4 is valid" << endl;
 	if(map.is_valid(hdl5))
 		cout << "hdl5 is valid" << endl;
+
+	cout << "--------------------" << endl;
+
+	slot_map<slot_data>::weak_handle wkhdl1 = hdl3;
+	slot_map<slot_data>::weak_handle wkhdl2 = hdl4;
+
+	if(map.is_valid(wkhdl1))
+		cout << "wkhdl1 is valid" << endl;
+	if(map.is_valid(wkhdl2))
+		cout << "wkhdl2 is valid" << endl;
+
+	map.erase(hdl3);
+	map.erase(hdl4);
+
+	if(!map.is_valid(wkhdl1))
+		cout << "wkhdl1 is invalid" << endl;
+	if(!map.is_valid(wkhdl2))
+		cout << "wkhdl2 is invalid" << endl;
+	cout << endl;
 }
 
 void ordered_slot_map_test() {
@@ -147,12 +168,33 @@ void ordered_slot_map_test() {
 	if(!map.is_valid(hdl2))
 		cout << "hdl2 is invalid" << endl;
 
+	cout << "--------------------" << endl;
+
 	if(map.is_valid(hdl3))
 		cout << "hdl3 is valid" << endl;
 	if(map.is_valid(hdl4))
 		cout << "hdl4 is valid" << endl;
 	if(map.is_valid(hdl5))
 		cout << "hdl5 is valid" << endl;
+
+	cout << "--------------------" << endl;
+
+	ordered_slot_map<slot_data>::weak_handle wkhdl1 = hdl3;
+	ordered_slot_map<slot_data>::weak_handle wkhdl2 = hdl4;
+
+	if(map.is_valid(wkhdl1))
+		cout << "wkhdl1 is valid" << endl;
+	if(map.is_valid(wkhdl2))
+		cout << "wkhdl2 is valid" << endl;
+
+	map.erase(hdl3);
+	map.erase(hdl4);
+
+	if(!map.is_valid(wkhdl1))
+		cout << "wkhdl1 is invalid" << endl;
+	if(!map.is_valid(wkhdl2))
+		cout << "wkhdl2 is invalid" << endl;
+	cout << endl;
 }
 
 void basic_slot_map_test() {
@@ -205,6 +247,7 @@ void basic_slot_map_test() {
 		cout << "hdl4 is valid" << endl;
 	if(map.is_valid(hdl5))
 		cout << "hdl5 is valid" << endl;
+	cout << endl;
 }
 
 int main() {

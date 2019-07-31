@@ -35,30 +35,51 @@ namespace slot_internal {
 template<typename T>
 struct generation_data {
 private:
+	struct counts {
+		T weakcount;
+		T strongcount;
+
+		inline bool is_zero() const {
+			return weakcount == 0 && strongcount == 0;
+		}
+	};
 	bool isvalid;									//is this current generation valid?
 	bool isvec;										//is gens a generation of vectors?
-	alignas(alignof(std::vector<T>)) char gens[sizeof(std::vector<T>)];
+	T base;											//the algorithms remove the 0'th element, this is the number removed
+													//we add base to the generation returned and sub base when looking up the current counts
+													//this optimisation keeps gens small even as generations get large (also prevents generations from getting large)
+	alignas(alignof(std::vector<counts>)) char gens[sizeof(std::vector<counts>)];
+	void get_current_gen(T& lgen, const char*& lst) const {
+		T gen = 0;
+		lgen = 0;
+		lst = (const char*)gens;
+		while(lst < gens + sizeof(std::vector<counts>)) {
+			counts crnt = *(counts*)lst;
+
+			if(!crnt.is_zero())
+				lgen = gen;
+
+			lst += sizeof(counts);
+			++gen;
+		}
+
+		//calculate the next list position
+		gen = 0;
+		if(lgen != 0 || !((counts*)gens)[0].is_zero()) gen = lgen + 1;
+		lst = gens + (sizeof(counts) * gen);
+	}
 	T current_generation() {
 		//get the current generation, don't modify
 		//return the new generation, count = 1
 		if(isvec) {
-			std::vector<T>& vec = *((std::vector<T>*)gens);
-			return vec.size() - 1;
+			std::vector<counts>& vec = *((std::vector<counts>*)gens);
+			return (vec.size() - 1) + base;
 		} else {
 			//get the top most generation
-			T gen = 0;
 			T lgen = 0;
 			char* lst = (char*)gens;
-			while(lst < gens + sizeof(std::vector<T>)) {
-				T crnt = *(T*)lst;
-
-				if(crnt != 0)
-					lgen = gen;
-
-				lst += sizeof(T);
-				++gen;
-			}
-			return lgen;
+			get_current_gen(lgen, lst);
+			return lgen + base;
 		}
 	}
 public:
@@ -66,105 +87,133 @@ public:
 		isvalid = true;
 		//return the new generation, count = 1
 		if(isvec) {
-			std::vector<T>& vec = *((std::vector<T>*)gens);
-			vec.push_back(1);
-			return vec.size() - 1;
+			std::vector<counts>& vec = *((std::vector<counts>*)gens);
+			vec.push_back(counts{0, 1});
+			return (vec.size() - 1) + base;
 		} else {
 			//get the top most generation
-			T gen = 0;
 			T lgen = 0;
-			char* lst = (char*)gens;
-			while(lst < gens + sizeof(std::vector<T>)) {
-				T crnt = *(T*)lst;
-
-				if(crnt != 0)
-					lgen = gen;
-
-				lst += sizeof(T);
-				++gen;
-			}
-			lst = gens + (sizeof(T) * (lgen + 1));
+			const char* lst = (char*)gens;
+			get_current_gen(lgen, lst);
 
 			//create a vector in place for the generation counters
-			if(lst >= gens + sizeof(std::vector<T>)) {
+			if(lst >= gens + sizeof(std::vector<counts>)) {
 				//swap this to the vector!
 				isvec = true;
 
-				std::vector<T> lvec;
-				lvec.resize(sizeof(std::vector<T>)/sizeof(T), 0);
-				memcpy(&lvec[0], gens, (sizeof(std::vector<T>)/sizeof(T)) * sizeof(T));
+				std::vector<counts> lvec;
+				lvec.resize(sizeof(std::vector<counts>)/sizeof(counts), counts{0, 0});
+				memcpy(&lvec[0], gens, (sizeof(std::vector<counts>)/sizeof(counts)) * sizeof(counts));
 
-				new (gens) std::vector<T>(std::move(lvec));
+				new (gens) std::vector<counts>(std::move(lvec));
 
-				std::vector<T>& vec = *((std::vector<T>*)gens);
-				vec.push_back(1);
+				std::vector<counts>& vec = *((std::vector<counts>*)gens);
+				vec.push_back(counts{0, 1});
 				return vec.size() - 1;
 			} else {
-				((T*)gens)[lgen] = 1;
-				return lgen;
+				if(lgen != 0 || !((counts*)gens)[0].is_zero())
+					lgen += 1;
+				((counts*)gens)[lgen] = counts{0, 1};
+				return lgen + base;
 			}
 		}
 	}
-	T& get_generation_count(T gen) {
+	counts& get_generation_count(T gen) {
 		//return the T count value for this generation
 		if(isvec) {
-			std::vector<T>& vec = *((std::vector<T>*)gens);
-			return vec[gen];
+			std::vector<counts>& vec = *((std::vector<counts>*)gens);
+			return vec[gen - base];
 		} else {
-			T* lst = (T*)gens;
-			return lst[gen];
+			counts* lst = (counts*)gens;
+			return lst[gen - base];
 		}
 	}
-	T increment_generation() {
+	T increment_generation(bool weak) {
 		//get the current generation
 		T gen = current_generation();
 		//increment this
-		++get_generation_count(gen);
+		counts& tmp = get_generation_count(gen);
+		if(weak)
+			++tmp.weakcount;
+		else
+			++tmp.strongcount;
+		return gen;
 	}
-	bool match_generation(T pgen) const {
+	bool match_generation(T pgen, bool weak) const {
 		//does the passed in generation match the current generation?
 		if(isvec) {
-			const std::vector<T>& vec = *((const std::vector<T>*)gens);
-			return pgen == vec.size() - 1;
+			const std::vector<counts>& vec = *((const std::vector<counts>*)gens);
+			return (pgen - base) == vec.size() - 1;
 		} else {
 			//get the top most generation
-			T gen = 0;
 			T lgen = 0;
 			const char* lst = (const char*)gens;
-			while(lst < gens + sizeof(std::vector<T>)) {
-				T crnt = *(T*)lst;
-
-				if(crnt != 0)
-					lgen = gen;
-
-				lst += sizeof(T);
-				++gen;
-			}
-			return pgen == lgen;
+			get_current_gen(lgen, lst);
+			return (pgen - base) == lgen;
 		}
 	}
-	void decrement_generation(T pgen) {
+	void decrement_generation(T pgen, bool weak) {
 		//decrement the given generation
+		pgen -= base;
 		if(isvec) {
-			std::vector<T>& vec = *((std::vector<T>*)gens);
-			--vec[pgen];
-			if(vec[pgen] == 0 && pgen == vec.size() - 1) {
+			std::vector<counts>& vec = *((std::vector<counts>*)gens);
+			if(weak)
+				--vec[pgen].weakcount;
+			else
+				--vec[pgen].strongcount;
+			if(vec[pgen].is_zero()) {
 				//remove any old generations
-				while(vec.size() > 0 && vec.back() == 0)
-					vec.pop_back();
+				if(pgen == vec.size() - 1) {
+					while(vec.size() > 0 && vec.back().is_zero())
+						vec.pop_back();
+				} else if(pgen == 0) {
+					while(vec.size() > 0 && vec.front().is_zero()) {
+						vec.erase(vec.begin());
+						++base;
+					}
+					//no outstanding handles to this, safe to zero base
+					if(vec.size() == 0) base = 0;
+				}
 
 				//move the data into the vector, small data optimisation
-				if(vec.size() * sizeof(T) < sizeof(std::vector<T>)) {
+				if(vec.size() * sizeof(counts) < sizeof(std::vector<counts>)) {
 					isvec = false;
 
-					std::vector<T> lvec = std::move(*((std::vector<T>*)gens));
-					memset(gens, 0, sizeof(std::vector<T>));
-					memcpy(gens, &lvec[0], lvec.size() * sizeof(T));
+					std::vector<counts> lvec = std::move(*((std::vector<counts>*)gens));
+					memset(gens, 0, sizeof(std::vector<counts>));
+					memcpy(gens, &lvec[0], lvec.size() * sizeof(counts));
 				}
 			}
 		} else {
-			T* lst = (T*)gens;
-			--lst[pgen];
+			counts* lst = (counts*)gens;
+			if(weak)
+				--lst[pgen].weakcount;
+			else
+				--lst[pgen].strongcount;
+			//de-base this
+			if(pgen == 0 && lst[0].is_zero()) {
+				T lgen = 0;
+				const char* lst = (const char*)gens;
+				get_current_gen(lgen, lst);
+
+				if(lgen == 0)
+					//no outstanding handles to this, safe to zero base
+					base = 0;
+				else {
+					base -= lgen;
+
+					//move the data by lgen (pop_front)
+					counts* lst = (counts*)gens;
+					size_t i = 0;
+					size_t k = lgen;
+					//do copy
+					for(; i <= lgen; ++i, ++k)
+						lst[i] = lst[k];
+					//zero the remaining data
+					for(; k * sizeof(counts) < sizeof(std::vector<counts>); ++k)
+						lst[k] = counts{0, 0};
+				}
+			}
 		}
 	}
 	inline void set_invalid() {
@@ -175,7 +224,7 @@ public:
 	}
 	~generation_data() {
 		//do final destruction
-		using vctr = std::vector<T>;
+		using vctr = std::vector<counts>;
 		if(isvec) {
 			vctr& vec = *((vctr*)gens);
 			vec.~vctr();

@@ -28,12 +28,13 @@
 #include <limits>
 #include <vector>
 
+#include "empty_mutex.hpp"
+
 namespace std {
 
-#define basic_slot_map_invalid	(unsigned)-1
+#define basic_slot_map_invalid	(size_t)-1
 
-template<typename T,
-		 typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct basic_slot_map;
 
 namespace slot_internal {
@@ -46,30 +47,31 @@ struct basic_slot {
 
 }
 
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct basic_slot_map_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct basic_slot_map_const_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct basic_slot_map_reverse_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct basic_slot_map_const_reverse_iterator;
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map_iterator {
 private:
-	basic_slot_map<T, Alloc>* map;
+	basic_slot_map<T, Mut, Alloc>* map;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator itr;
 
-	friend struct basic_slot_map<T, Alloc>;
+	friend struct basic_slot_map<T, Mut, Alloc>;
 
-	friend struct basic_slot_map_const_iterator<T, Alloc>;
-	friend struct basic_slot_map_reverse_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct basic_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
-	basic_slot_map_iterator(basic_slot_map<T, Alloc>* mp,
-						  const typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator& it)
+	basic_slot_map_iterator(basic_slot_map<T, Mut, Alloc>* mp,
+							const typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator& it)
 		: map(mp), itr(it)
 	{}
 public:
@@ -124,32 +126,33 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator basic_slot_map_const_iterator<T, Alloc>() const {
-		return basic_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
+	inline operator basic_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator basic_slot_map_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator basic_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator basic_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator basic_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map_const_iterator {
 private:
-	const basic_slot_map<T, Alloc>* map;
+	const basic_slot_map<T, Mut, Alloc>* map;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator itr;
 
-	friend struct basic_slot_map<T, Alloc>;
+	friend struct basic_slot_map<T, Mut, Alloc>;
 
-	friend struct basic_slot_map_iterator<T, Alloc>;
-	friend struct basic_slot_map_reverse_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct basic_slot_map_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
-	basic_slot_map_const_iterator(const basic_slot_map<T, Alloc>* mp,
-								const typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator& it)
+	basic_slot_map_const_iterator(const basic_slot_map<T, Mut, Alloc>* mp,
+								  const typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator& it)
 		: map(mp), itr(it)
 	{}
 public:
@@ -204,32 +207,33 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator basic_slot_map_iterator<T, Alloc>() const {
-		return basic_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
+	inline operator basic_slot_map_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator basic_slot_map_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator basic_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator basic_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator basic_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map_reverse_iterator {
 private:
-	basic_slot_map<T, Alloc>* map;
+	basic_slot_map<T, Mut, Alloc>* map;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator itr;
 
-	friend struct basic_slot_map<T, Alloc>;
+	friend struct basic_slot_map<T, Mut, Alloc>;
 
-	friend struct basic_slot_map_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct basic_slot_map_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
-	basic_slot_map_reverse_iterator(basic_slot_map<T, Alloc>* mp,
-								  const typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator& it)
+	basic_slot_map_reverse_iterator(basic_slot_map<T, Mut, Alloc>* mp,
+									const typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator& it)
 		: map(mp), itr(it)
 	{}
 public:
@@ -284,32 +288,33 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator basic_slot_map_iterator<T, Alloc>() const {
-		return basic_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
+	inline operator basic_slot_map_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator basic_slot_map_const_iterator<T, Alloc>() const {
-		return basic_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
+	inline operator basic_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator basic_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator basic_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map_const_reverse_iterator {
 private:
-	const basic_slot_map<T, Alloc>* map;
+	const basic_slot_map<T, Mut, Alloc>* map;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator itr;
 
-	friend struct basic_slot_map<T, Alloc>;
+	friend struct basic_slot_map<T, Mut, Alloc>;
 
-	friend struct basic_slot_map_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_iterator<T, Alloc>;
-	friend struct basic_slot_map_reverse_iterator<T, Alloc>;
+	friend struct basic_slot_map_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_reverse_iterator<T, Mut, Alloc>;
 
-	basic_slot_map_const_reverse_iterator(const basic_slot_map<T, Alloc>* mp,
-										const typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator& it)
+	basic_slot_map_const_reverse_iterator(const basic_slot_map<T, Mut, Alloc>* mp,
+										  const typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator& it)
 		: map(mp), itr(it)
 	{}
 public:
@@ -364,25 +369,26 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator basic_slot_map_iterator<T, Alloc>() const {
-		return basic_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
+	inline operator basic_slot_map_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator basic_slot_map_const_iterator<T, Alloc>() const {
-		return basic_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
+	inline operator basic_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator basic_slot_map_reverse_iterator<T, Alloc>() const {
-		return basic_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator basic_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return basic_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map_handle {
 private:
-	basic_slot_map<T, Alloc>* map = 0;
-	unsigned idx = basic_slot_map_invalid;
+	basic_slot_map<T, Mut, Alloc>* map = 0;
+	size_t idx = basic_slot_map_invalid;
 
-	friend struct basic_slot_map<T, Alloc>;
+	friend struct basic_slot_map<T, Mut, Alloc>;
 
 	inline void clear() {
 		map = 0;
@@ -466,29 +472,31 @@ public:
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct basic_slot_map {
 private:
 	struct slot_ref {
-		unsigned count = 0;
-		unsigned idx = basic_slot_map_invalid;
+		size_t count = 0;
+		size_t idx = basic_slot_map_invalid;
 	};
 
-	unsigned itemcount = 0;
-	unsigned idxcount = 0;
-	unsigned nextitem = 0;
-	unsigned nextidx = 0;
+	size_t itemcount = 0;
+	size_t idxcount = 0;
+	size_t nextitem = 0;
+	size_t nextidx = 0;
+	Mut mut;
 	std::vector<slot_internal::basic_slot<T>, Alloc> items;
 	std::vector<slot_ref, Alloc> idxs;
 
-	friend struct basic_slot_map_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_iterator<T, Alloc>;
-	friend struct basic_slot_map_reverse_iterator<T, Alloc>;
-	friend struct basic_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct basic_slot_map_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct basic_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
-	friend struct basic_slot_map_handle<T, Alloc>;
+	friend struct basic_slot_map_handle<T, Mut, Alloc>;
 public:
-	basic_slot_map(unsigned slots = 50) {
+	basic_slot_map(size_t slots = 50) {
 		items.resize(slots);
 		idxs.resize(slots);
 	}
@@ -507,20 +515,29 @@ public:
 	typedef T const& const_reference;
 	typedef T* pointer;
 	typedef T const* const_pointer;
-	typedef basic_slot_map_iterator<T, Alloc> iterator;
-	typedef basic_slot_map_const_iterator<T, Alloc> const_iterator;
-	typedef basic_slot_map_reverse_iterator<T, Alloc> reverse_iterator;
-	typedef basic_slot_map_const_reverse_iterator<T, Alloc> const_reverse_iterator;
-	typedef basic_slot_map_handle<T, Alloc> handle;
+	typedef basic_slot_map_iterator<T, Mut, Alloc> iterator;
+	typedef basic_slot_map_const_iterator<T, Mut, Alloc> const_iterator;
+	typedef basic_slot_map_reverse_iterator<T, Mut, Alloc> reverse_iterator;
+	typedef basic_slot_map_const_reverse_iterator<T, Mut, Alloc> const_reverse_iterator;
+	typedef basic_slot_map_handle<T, Mut, Alloc> handle;
 
-private:
-	void increment_handle(basic_slot_map_handle<T, Alloc>& hdl) {
-		if(is_valid(hdl))
-			++idxs[hdl.idx].count;
+	void lock() {
+		mut.lock();
 	}
-	void decrement_handle(basic_slot_map_handle<T, Alloc>& hdl) {
+	void unlock() {
+		mut.unlock();
+	}
+private:
+	void increment_handle(basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
+		if(get_object_internal(const_cast<basic_slot_map_handle<T, Mut, Alloc>&>(hdl)) != 0)
+			++idxs[hdl.idx].count;
+		unlock();
+	}
+	void decrement_handle(basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
 		//in the destructor of hdl
-		if(is_valid(hdl)) {
+		if(get_object_internal(const_cast<basic_slot_map_handle<T, Mut, Alloc>&>(hdl)) != 0) {
 			slot_ref& rf = idxs[hdl.idx];
 			--rf.count;
 			if(rf.count == 0) {
@@ -532,15 +549,20 @@ private:
 				--itemcount;
 			}
 		}
+		unlock();
 	}
 public:
 
 	// iterators:
 	inline iterator begin() noexcept {
-		return iterator(this, items.begin());
+		auto it = items.begin();
+		for(; it != items.end() && !it->valid; ++it);
+		return iterator(this, it);
 	}
 	inline const_iterator begin() const noexcept {
-		return const_iterator(this, items.begin());
+		auto it = items.begin();
+		for(; it != items.end() && !it->valid; ++it);
+		return const_iterator(this, it);
 	}
 	inline iterator end() noexcept {
 		return iterator(this, items.end());
@@ -550,10 +572,14 @@ public:
 	}
 
 	inline reverse_iterator rbegin() noexcept {
-		return reverse_iterator(this, items.rbegin());
+		auto it = items.rbegin();
+		for(; it != items.rend() && !it->valid; ++it);
+		return reverse_iterator(this, it);
 	}
 	inline const_reverse_iterator rbegin() const noexcept {
-		return const_reverse_iterator(this, items.rbegin());
+		auto it = items.rbegin();
+		for(; it != items.rend() && !it->valid; ++it);
+		return const_reverse_iterator(this, it);
 	}
 	inline reverse_iterator rend() noexcept {
 		return reverse_iterator(this, items.rend());
@@ -563,13 +589,17 @@ public:
 	}
 
 	inline const_iterator cbegin() const noexcept {
-		return const_iterator(this, items.cbegin());
+		auto it = items.cbegin();
+		for(; it != items.cend() && !it->valid; ++it);
+		return const_iterator(this, it);
 	}
 	inline const_iterator cend() const noexcept {
 		return const_iterator(this, items.cend());
 	}
 	inline const_reverse_iterator crbegin() const noexcept {
-		return const_reverse_iterator(this, items.crbegin());
+		auto it = items.crbegin();
+		for(; it != items.crend() && !it->valid; ++it);
+		return const_reverse_iterator(this, it);
 	}
 	inline const_reverse_iterator crend() const noexcept {
 		return const_reverse_iterator(this, items.crend());
@@ -577,34 +607,51 @@ public:
 
 	// capacity:
 	inline size_type size() const noexcept {
-		return itemcount;
+		lock();
+		size_type rtn = itemcount;
+		unlock();
+		return rtn;
 	}
 	inline size_type max_size() const noexcept {
 		return std::numeric_limits<size_type>::max();
 	}
 	void resize(size_type sz) {
-		if(sz < items.size())
+		lock();
+		if(sz < items.size()) {
+			unlock();
 			return;
+		}
 		items.resize(sz);
 		idxs.resize(sz);
+		unlock();
 	}
 	inline size_type capacity() const noexcept {
-		return items.capacity();
+		lock();
+		size_type rtn = items.capacity();
+		unlock();
+		return rtn;
 	}
 	void reserve(size_type n) {
+		lock();
 		items.resize(n);
 		idxs.resize(n);
+		unlock();
 	}
 	inline bool empty() const noexcept {
-		return size() == 0;
+		lock();
+		bool rtn = size() == 0;
+		unlock();
+		return rtn;
 	}
 	void shrink_to_fit() {
+		lock();
 		items.shrink_to_fit();
 		idxs.shrink_to_fit();
+		unlock();
 	}
 
 private:
-	void get_next_free(unsigned& itemPos, unsigned& idxPos) {
+	void get_next_free(size_t& itemPos, size_t& idxPos) {
 		//resize if we are out of slots
 		if(idxcount == idxs.size()) {
 			//move the indexes to reference the free ones
@@ -638,40 +685,46 @@ private:
 		} while(idxs[nextidx].count > 0);
 	}
 public:
-	basic_slot_map_handle<T, Alloc> insert(const T& val) {
-		unsigned itemPos = 0;
-		unsigned idxPos = 0;
+	basic_slot_map_handle<T, Mut, Alloc> insert(const T& val) {
+		lock();
+		size_t itemPos = 0;
+		size_t idxPos = 0;
 		get_next_free(itemPos, idxPos);
 
-		basic_slot_map_handle<T, Alloc> rtn;
+		basic_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = idxPos;
 
 		new (items[itemPos].obj) T(val);
+		unlock();
 		return rtn;
 	}
-	basic_slot_map_handle<T, Alloc> insert(T&& val) {
-		unsigned itemPos = 0;
-		unsigned idxPos = 0;
+	basic_slot_map_handle<T, Mut, Alloc> insert(T&& val) {
+		lock();
+		size_t itemPos = 0;
+		size_t idxPos = 0;
 		get_next_free(itemPos, idxPos);
 
-		basic_slot_map_handle<T, Alloc> rtn;
+		basic_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = idxPos;
 
 		new (items[itemPos].obj) T(std::move(val));
+		unlock();
 		return rtn;
 	}
 	template<typename Itr>
-	std::vector<basic_slot_map_handle<T, Alloc>> insert(Itr begin, Itr end) {
-		std::vector<basic_slot_map_handle<T, Alloc>> rtn;
+	std::vector<basic_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end) {
+		lock();
+		std::vector<basic_slot_map_handle<T, Mut, Alloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin));
+		unlock();
 		return rtn;
 	}
 
 private:
-	slot_internal::basic_slot<T>* get_object_internal(basic_slot_map_handle<T, Alloc>& hdl) {
+	slot_internal::basic_slot<T>* get_object_internal(basic_slot_map_handle<T, Mut, Alloc>& hdl) {
 		if(hdl.idx == basic_slot_map_invalid)
 			return 0;
 		slot_ref& rf = idxs[hdl.idx];
@@ -692,23 +745,37 @@ private:
 	}
 public:
 
-	inline bool is_valid(const basic_slot_map_handle<T, Alloc>& hdl) {
-		return get_object_internal(const_cast<basic_slot_map_handle<T, Alloc>&>(hdl)) != 0;
+	inline bool is_valid(const basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
+		bool rtn = get_object_internal(const_cast<basic_slot_map_handle<T, Mut, Alloc>&>(hdl)) != 0;
+		unlock();
+		return rtn;
 	}
-	T* get_object(basic_slot_map_handle<T, Alloc>& hdl) {
+	T* get_object(basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
 		slot_internal::basic_slot<T>* obj = get_object_internal(hdl);
-		if(obj)
-			return (T*)obj->obj;
+		if(obj) {
+			T* rtn = (T*)obj->obj;
+			unlock();
+			return rtn;
+		}
+		unlock();
 		return 0;
 	}
-	const T* get_object(const basic_slot_map_handle<T, Alloc>& hdl) {
-		slot_internal::basic_slot<T>* obj = get_object_internal(const_cast<basic_slot_map_handle<T, Alloc>&>(hdl));
-		if(obj)
-			return (const T*)obj->obj;
+	const T* get_object(const basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
+		slot_internal::basic_slot<T>* obj = get_object_internal(const_cast<basic_slot_map_handle<T, Mut, Alloc>&>(hdl));
+		if(obj) {
+			const T* rtn = (const T*)obj->obj;
+			unlock();
+			return rtn;
+		}
+		unlock();
 		return 0;
 	}
 
-	void erase(basic_slot_map_handle<T, Alloc>& hdl) {
+	void erase(basic_slot_map_handle<T, Mut, Alloc>& hdl) {
+		lock();
 		slot_internal::basic_slot<T>* obj = get_object_internal(hdl);
 		if(obj) {
 			//clear the object
@@ -722,15 +789,17 @@ public:
 			--rf.count;
 			if(rf.count == 0) --idxcount;
 		}
-		return;
+		unlock();
 	}
 
 	void clear() noexcept {
+		lock();
 		for(auto it = items.begin(); it != items.end(); ++it)
 			if(it->valid) {
 				it->valid = false;
 				((T*)it->obj)->~T();
 			}
+		unlock();
 	}
 
 	~basic_slot_map() {

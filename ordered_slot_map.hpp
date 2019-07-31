@@ -27,12 +27,13 @@
 
 #include <limits>
 #include <vector>
+
+#include "empty_mutex.hpp"
 #include "generation_data.hpp"
 
 namespace std {
 
-template<typename T,
-		 typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct ordered_slot_map;
 
 namespace slot_internal {
@@ -82,7 +83,7 @@ bool binary_search(Itr beg, Itr end, const T& item,
 
 template<typename T>
 struct ordered_slot {
-	unsigned backidx;
+	size_t backidx;
 	T obj;
 
 	inline operator T&() {
@@ -95,26 +96,27 @@ struct ordered_slot {
 
 }
 
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct ordered_slot_map_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct ordered_slot_map_const_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct ordered_slot_map_reverse_iterator;
-template<typename T, typename Alloc>
+template<typename T, typename Mut, typename Alloc>
 struct ordered_slot_map_const_reverse_iterator;
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct ordered_slot_map_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator itr;
 
-	friend struct ordered_slot_map<T, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc>;
 
-	friend struct ordered_slot_map_const_iterator<T, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
 	ordered_slot_map_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator& it)
 		: itr(it)
@@ -164,28 +166,29 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_const_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct ordered_slot_map_const_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator itr;
 
-	friend struct ordered_slot_map<T, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc>;
 
-	friend struct ordered_slot_map_iterator<T, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
 	ordered_slot_map_const_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator& it)
 		: itr(it)
@@ -235,28 +238,29 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Alloc>() const {
-		return ordered_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct ordered_slot_map_reverse_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator itr;
 
-	friend struct ordered_slot_map<T, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc>;
 
-	friend struct ordered_slot_map_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
 	ordered_slot_map_reverse_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator& it)
 		: itr(it)
@@ -306,28 +310,29 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Alloc>() const {
-		return ordered_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_const_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct ordered_slot_map_const_reverse_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator itr;
 
-	friend struct ordered_slot_map<T, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc>;
 
-	friend struct ordered_slot_map_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
 
 	ordered_slot_map_const_reverse_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator& it)
 		: itr(it)
@@ -377,48 +382,64 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Alloc>() const {
-		return ordered_slot_map_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_const_iterator<T, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
 };
 
-template<typename T,
-		 typename Alloc = std::allocator<T>>
-struct ordered_slot_map_handle {
-private:
-	ordered_slot_map<T, Alloc>* map = 0;
-	unsigned idx = 0;
-	unsigned gen = 0;
+template<typename T, typename Mut, typename Alloc>
+struct ordered_slot_map_weak_handle;
+template<typename T, typename Mut, typename Alloc>
+struct ordered_slot_map_handle;
 
-	friend struct ordered_slot_map<T, Alloc>;
+namespace slot_internal {
+
+template<typename T, typename Mut, typename Alloc>
+struct internal_ordered_slot_map_handle {
+	ordered_slot_map<T, Mut, Alloc>* map = 0;
+	size_t idx = 0;
+	size_t gen = 0;
 
 	inline void clear() {
 		map = 0;
 		idx = 0;
 		gen = 0;
 	}
+};
 
-public:
+}
+
+template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
+		 typename Alloc = std::allocator<T>>
+struct ordered_slot_map_handle : slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc> {
 	ordered_slot_map_handle() = default;
 
-	ordered_slot_map_handle(const ordered_slot_map_handle& rhs)
-		: map(0), idx(0), gen(0) {
-		if(rhs.map && rhs.map->increment_handle(const_cast<ordered_slot_map_handle&>(rhs))) {
-			map = rhs.map;
-			idx = rhs.idx;
-			gen = rhs.gen;
-		}
+	friend struct ordered_slot_map<T, Mut, Alloc>;
+
+	ordered_slot_map_handle(const ordered_slot_map_handle& rhs) {
+		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp), false))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
 	}
 	ordered_slot_map_handle(ordered_slot_map_handle&& rhs) {
-		map = rhs.map;
-		idx = rhs.idx;
-		gen = rhs.gen;
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+	}
+
+	ordered_slot_map_handle(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), false))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+	}
+	ordered_slot_map_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
 
 		rhs.clear();
 	}
@@ -429,11 +450,9 @@ public:
 
 		this->~ordered_slot_map_handle();
 
-		if(rhs.map && rhs.map->increment_handle(const_cast<ordered_slot_map_handle&>(rhs))) {
-			map = rhs.map;
-			idx = rhs.idx;
-			gen = rhs.gen;
-		}
+		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp), false))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
 		return *this;
 	}
 	ordered_slot_map_handle& operator=(ordered_slot_map_handle&& rhs) {
@@ -442,91 +461,225 @@ public:
 
 		this->~ordered_slot_map_handle();
 
-		map = rhs.map;
-		idx = rhs.idx;
-		gen = rhs.gen;
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+		return *this;
+	}
+
+	ordered_slot_map_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_handle();
+
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), false))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+		return *this;
+	}
+	ordered_slot_map_handle& operator=(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_handle();
+
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
 
 		rhs.clear();
 		return *this;
 	}
 
 	~ordered_slot_map_handle() {
-		if(map)
-			map->decrement_handle(*this);
-		clear();
+		if(this->map)
+			this->map->decrement_handle(*this, false);
+		this->clear();
 	}
 
 	inline T& operator*() {
-		return *map->get_object(*this);
+		return *this->map->get_object(*this);
 	}
 	inline T* operator->() {
-		return map->get_object(*this);
+		return this->map->get_object(*this);
 	}
 
 	inline const T& operator*() const {
-		return const_cast<const T&>(*map->get_object(const_cast<ordered_slot_map_handle&>(*this)));
+		return const_cast<const T&>(*this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
 	}
 	inline const T* operator->() const {
-		return const_cast<const T*>(map->get_object(const_cast<ordered_slot_map_handle&>(*this)));
+		return const_cast<const T*>(this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
 	}
 
 	inline operator T*() {
-		return map->get_object(*this);
+		return this->map->get_object(*this);
 	}
 	inline operator const T*() const {
-		return map->get_object(*this);
+		return this->map->get_object(*this);
 	}
 };
 
 template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
+		 typename Alloc = std::allocator<T>>
+struct ordered_slot_map_weak_handle : slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc> {
+	ordered_slot_map_weak_handle() = default;
+
+	friend struct ordered_slot_map<T, Mut, Alloc>;
+
+	ordered_slot_map_weak_handle(const ordered_slot_map_weak_handle& rhs) {
+		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp), true))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+	}
+	ordered_slot_map_weak_handle(ordered_slot_map_weak_handle&& rhs) {
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+	}
+
+	ordered_slot_map_weak_handle(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), true))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+	}
+	ordered_slot_map_weak_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+	}
+
+	ordered_slot_map_weak_handle& operator=(const ordered_slot_map_weak_handle& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_weak_handle();
+
+		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp), true))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+		return *this;
+	}
+	ordered_slot_map_weak_handle& operator=(ordered_slot_map_weak_handle&& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_weak_handle();
+
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+		return *this;
+	}
+
+	ordered_slot_map_weak_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_weak_handle();
+
+		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), true))
+			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+		return *this;
+	}
+	ordered_slot_map_weak_handle& operator=(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		this->~ordered_slot_map_weak_handle();
+
+		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+
+		rhs.clear();
+		return *this;
+	}
+
+	~ordered_slot_map_weak_handle() {
+		if(this->map)
+			this->map->decrement_handle(*this, true);
+		this->clear();
+	}
+
+	inline T& operator*() {
+		return *this->map->get_object(*this);
+	}
+	inline T* operator->() {
+		return this->map->get_object(*this);
+	}
+
+	inline const T& operator*() const {
+		return const_cast<const T&>(*this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+	}
+	inline const T* operator->() const {
+		return const_cast<const T*>(this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+	}
+
+	inline operator T*() {
+		return this->map->get_object(*this);
+	}
+	inline operator const T*() const {
+		return this->map->get_object(*this);
+	}
+};
+
+
+template<typename T,
+		 typename Mut = slot_internal::empty_mutex,
 		 typename Alloc = std::allocator<T>>
 struct ordered_slot_map {
 private:
 	struct slot_index {
 		slot_internal::generation_data<uint32_t> gens;
-		unsigned next;									//used when object doesn't exist to reference the next object to allocate
-		unsigned idx;									//index into items
+		union slot_data {
+			size_t next;									//used when object doesn't exist to reference the next object to allocate
+			size_t idx;									//index into items
+		} unn;
 	};
-	unsigned count = 0;
+	size_t count = 0;
+	Mut mut;
 	slot_index* firstslot = 0;
 	slot_index* lastslot = 0;
 	std::vector<slot_internal::ordered_slot<T>, Alloc> items;
 	std::vector<slot_index, Alloc> indexes;
 
-	friend struct ordered_slot_map_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
 
-	friend struct ordered_slot_map_handle<T, Alloc>;
+	friend struct ordered_slot_map_handle<T, Mut, Alloc>;
+	friend struct ordered_slot_map_weak_handle<T, Mut, Alloc>;
 
-	void extend(unsigned extnd) {
+	void extend(size_t extnd) {
 		if(extnd == 0)
 			return;
 
-		unsigned csze = indexes.size();
+		size_t csze = indexes.size();
 		items.reserve(items.size() + extnd);
 		indexes.resize(csze + extnd);
 
-		unsigned nxt = 0;
+		size_t nxt = 0;
 		if(firstslot)
 			nxt = std::distance(&indexes[0], firstslot);
 
 		//append all of the new indexes onto the front of the slot list
 		memset((void*)&indexes[csze], 0, sizeof(slot_internal::slot<T>) * extnd);
-		for(unsigned i = csze; i < csze + extnd; ++i)
+		for(size_t i = csze; i < csze + extnd; ++i)
 			if(i == csze + extnd - 1)
-				indexes[i].next = nxt;
+				indexes[i].unn.next = nxt;
 			else
-				indexes[i].next = i + 1;
+				indexes[i].unn.next = i + 1;
 
 		firstslot = &indexes[csze];
 		if(nxt == 0)
 			lastslot = &indexes[csze + extnd - 1];
 	}
 
+	void lock() {
+		mut.lock();
+	}
+	void unlock() {
+		mut.unlock();
+	}
 public:
-	ordered_slot_map(unsigned slots = 50) {
+	ordered_slot_map(size_t slots = 50) {
 		extend(slots);
 	}
 	ordered_slot_map(const ordered_slot_map& rhs) = delete;
@@ -544,11 +697,12 @@ public:
 	typedef T const& const_reference;
 	typedef T* pointer;
 	typedef T const* const_pointer;
-	typedef ordered_slot_map_iterator<T, Alloc> iterator;
-	typedef ordered_slot_map_const_iterator<T, Alloc> const_iterator;
-	typedef ordered_slot_map_reverse_iterator<T, Alloc> reverse_iterator;
-	typedef ordered_slot_map_const_reverse_iterator<T, Alloc> const_reverse_iterator;
-	typedef ordered_slot_map_handle<T, Alloc> handle;
+	typedef ordered_slot_map_iterator<T, Mut, Alloc> iterator;
+	typedef ordered_slot_map_const_iterator<T, Mut, Alloc> const_iterator;
+	typedef ordered_slot_map_reverse_iterator<T, Mut, Alloc> reverse_iterator;
+	typedef ordered_slot_map_const_reverse_iterator<T, Mut, Alloc> const_reverse_iterator;
+	typedef ordered_slot_map_handle<T, Mut, Alloc> handle;
+	typedef ordered_slot_map_weak_handle<T, Mut, Alloc> weak_handle;
 
 private:
 	void destruct_object(slot_index* obj) {
@@ -556,40 +710,48 @@ private:
 		obj->gens.set_invalid();
 
 		//remove this object
-		items.erase(items.begin() + obj->idx);
+		items.erase(items.begin() + obj->unn.idx);
 		//change all of the indexes to the displaced objects
-		for(unsigned idx = obj->idx; idx < items.size(); ++idx)
-			indexes[items[idx].backidx].idx = idx;
+		for(size_t idx = obj->unn.idx; idx < items.size(); ++idx)
+			indexes[items[idx].backidx].unn.idx = idx;
 
-		obj->idx = 0;
+		obj->unn.idx = 0;
 
 		//add to the start of the free list
 		if(firstslot == 0) {
-			obj->next = 0;
+			obj->unn.next = 0;
 			firstslot = obj;
 			lastslot = obj;
 		} else {
-			obj->next = std::distance(&indexes[0], firstslot);
+			obj->unn.next = std::distance(&indexes[0], firstslot);
 			firstslot = obj;
 		}
 		--count;
 	}
-	bool increment_handle(ordered_slot_map_handle<T, Alloc>& hdl) {
-		slot_index* obj = get_object_internal(hdl);
+	bool increment_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
-			++obj->gens.get_generation_count(hdl.gen);
+			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
+			if(weak)
+				++tmp.weakcount;
+			else
+				++tmp.strongcount;
 			return true;
 		}
 		return false;
 	}
-	void decrement_handle(ordered_slot_map_handle<T, Alloc>& hdl) {
-		slot_index* obj = get_object_internal(hdl);
+	void decrement_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
-			unsigned& cnt = obj->gens.get_generation_count(hdl.gen);
-			--cnt;
-			if(cnt == 0) {
-				destruct_object(obj);
-				hdl.clear();
+			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
+			if(weak)
+				--tmp.weakcount;
+			else {
+				--tmp.strongcount;
+				if(tmp.strongcount == 0) {
+					destruct_object(obj);
+					hdl.clear();
+				}
 			}
 		}
 	}
@@ -663,11 +825,11 @@ public:
 	}
 
 private:
-	void update_object_indexes(unsigned pos) {
-		for(unsigned i = pos + 1; i < items.size(); ++i)
-			indexes[items[i].backidx].idx = i;
+	void update_object_indexes(size_t pos) {
+		for(size_t i = pos + 1; i < items.size(); ++i)
+			indexes[items[i].backidx].unn.idx = i;
 	}
-	unsigned get_insert_pos(const T& val) {
+	size_t get_insert_pos(const T& val) {
 		//search and insert this, returning the position
 		typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator out;
 		slot_internal::binary_search(items.begin(), items.end(), (const T&)val,
@@ -675,7 +837,7 @@ private:
 				return lhs < rhs;
 			}, out);
 
-		unsigned pos = std::distance(items.begin(), out);
+		size_t pos = std::distance(items.begin(), out);
 		slot_internal::ordered_slot<T> itm;
 		itm.obj = val;
 		items.insert(out, std::move(itm));
@@ -685,13 +847,13 @@ private:
 		return pos;
 	}
 	template<typename Less>
-	unsigned get_insert_pos(const T& val, Less comp) {
+	size_t get_insert_pos(const T& val, Less comp) {
 		//search and insert this, returning the position
 		typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator out;
 		slot_internal::binary_search(items.begin(), items.end(), (const T&)val,
 									 comp, out);
 
-		unsigned pos = std::distance(items.begin(), out);
+		size_t pos = std::distance(items.begin(), out);
 		slot_internal::ordered_slot<T> itm;
 		itm.obj = val;
 		items.insert(out, std::move(itm));
@@ -700,7 +862,7 @@ private:
 		update_object_indexes(pos);
 		return pos;
 	}
-	unsigned get_insert_pos(T&& val) {
+	size_t get_insert_pos(T&& val) {
 		//search and insert this, returning the position
 		typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator out;
 		slot_internal::binary_search(items.begin(), items.end(), (const T&)val,
@@ -708,7 +870,7 @@ private:
 				return lhs < rhs;
 			}, out);
 
-		unsigned pos = std::distance(items.begin(), out);
+		size_t pos = std::distance(items.begin(), out);
 		slot_internal::ordered_slot<T> itm;
 		itm.obj = std::move(val);
 		items.insert(out, std::move(itm));
@@ -718,13 +880,13 @@ private:
 		return pos;
 	}
 	template<typename Less>
-	unsigned get_insert_pos(T&& val, Less comp) {
+	size_t get_insert_pos(T&& val, Less comp) {
 		//search and insert this, returning the position
 		typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator out;
 		slot_internal::binary_search(items.begin(), items.end(), (const T&)val,
 									 comp, out);
 
-		unsigned pos = std::distance(items.begin(), out);
+		size_t pos = std::distance(items.begin(), out);
 		slot_internal::ordered_slot<T> itm;
 		itm.obj = std::move(val);
 		items.insert(out, std::move(itm));
@@ -733,14 +895,14 @@ private:
 		update_object_indexes(pos);
 		return pos;
 	}
-	unsigned get_next_free(unsigned nidx) {
+	size_t get_next_free(size_t nidx) {
 		if(count == indexes.size())
 			//double the size
 			extend(indexes.size());
 
-		unsigned pos = std::distance(&indexes[0], firstslot);
+		size_t pos = std::distance(&indexes[0], firstslot);
 
-		slot_index* nxt = &indexes[firstslot->next];
+		slot_index* nxt = &indexes[firstslot->unn.next];
 		if(firstslot == lastslot)
 			nxt = 0;
 
@@ -751,128 +913,154 @@ private:
 			firstslot = nxt;
 
 		++count;
-		indexes[pos].idx = nidx;
+		indexes[pos].unn.idx = nidx;
 		return pos;
 	}
 public:
-	ordered_slot_map_handle<T, Alloc> insert(const T& val) {
-		unsigned idx = get_insert_pos(val);
-		unsigned itemPos = get_next_free(idx);
+	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val) {
+		size_t idx = get_insert_pos(val);
+		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Alloc> rtn;
+		ordered_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
 		return rtn;
 	}
 	template<typename Less>
-	ordered_slot_map_handle<T, Alloc> insert(const T& val, Less comp) {
-		unsigned idx = get_insert_pos(val, comp);
-		unsigned itemPos = get_next_free(idx);
+	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val, Less comp) {
+		size_t idx = get_insert_pos(val, comp);
+		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Alloc> rtn;
+		ordered_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
 		return rtn;
 	}
-	ordered_slot_map_handle<T, Alloc> insert(T&& val) {
-		unsigned idx = get_insert_pos(std::move(val));
-		unsigned itemPos = get_next_free(idx);
+	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val) {
+		size_t idx = get_insert_pos(std::move(val));
+		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Alloc> rtn;
+		ordered_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
 		return rtn;
 	}
 	template<typename Less>
-	ordered_slot_map_handle<T, Alloc> insert(T&& val, Less comp) {
-		unsigned idx = get_insert_pos(std::move(val), comp);
-		unsigned itemPos = get_next_free(idx);
+	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val, Less comp) {
+		size_t idx = get_insert_pos(std::move(val), comp);
+		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Alloc> rtn;
+		ordered_slot_map_handle<T, Mut, Alloc> rtn;
 		rtn.map = this;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
 		return rtn;
 	}
 	template<typename Itr>
-	std::vector<ordered_slot_map_handle<T, Alloc>> insert(Itr begin, Itr end) {
-		std::vector<ordered_slot_map_handle<T, Alloc>> rtn;
+	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end) {
+		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin));
 		return rtn;
 	}
 	template<typename Itr, typename Less>
-	std::vector<ordered_slot_map_handle<T, Alloc>> insert(Itr begin, Itr end, Less comp) {
-		std::vector<ordered_slot_map_handle<T, Alloc>> rtn;
+	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end, Less comp) {
+		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin, comp));
 		return rtn;
 	}
 
 private:
-	slot_index* get_object_internal(ordered_slot_map_handle<T, Alloc>& hdl) {
+	slot_index* get_object_internal(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
 		if(hdl.map == 0)
 			return 0;
 		slot_index& rf = indexes[hdl.idx];
 		//test that the generation matches
-		if(!rf.gens.is_valid() || !rf.gens.match_generation(hdl.gen)) {
-			rf.gens.decrement_generation(hdl.gen);
+		if(!rf.gens.is_valid() || !rf.gens.match_generation(hdl.gen, weak)) {
+			rf.gens.decrement_generation(hdl.gen, weak);
 			hdl.clear();
 			return 0;
 		}
 		return &rf;
 	}
 
-public:
-	inline bool is_valid(const ordered_slot_map_handle<T, Alloc>& hdl) {
-		return get_object_internal(const_cast<ordered_slot_map_handle<T, Alloc>&>(hdl)) != 0;
+	inline bool is_valid(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		return get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(hdl), weak) != 0;
 	}
-	T* get_object(ordered_slot_map_handle<T, Alloc>& hdl) {
-		slot_index* obj = get_object_internal(hdl);
+	T* get_object(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj)
-			return &items[obj->idx].obj;
+			return &items[obj->unn.idx].obj;
 		return 0;
 	}
-	const T* get_object(const ordered_slot_map_handle<T, Alloc>& hdl) {
-		slot_index* obj = get_object_internal(const_cast<ordered_slot_map_handle<T, Alloc>&>(hdl));
+	const T* get_object(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(hdl), weak);
 		if(obj)
-			return &items[obj->idx].obj;
+			return &items[obj->unn.idx].obj;
 		return 0;
 	}
 
-	void erase(ordered_slot_map_handle<T, Alloc>& hdl) {
-		slot_index* obj = get_object_internal(hdl);
+	void erase(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj)
 			destruct_object(obj);
+	}
+public:
+
+	inline bool is_valid(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+		return is_valid(hdl, false);
+	}
+	inline bool is_valid(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+		return is_valid(hdl, true);
+	}
+	inline T* get_object(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+		return get_object(hdl, false);
+	}
+	inline T* get_object(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+		return get_object(hdl, true);
+	}
+	inline const T* get_object(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+		return get_object(hdl, false);
+	}
+	inline const T* get_object(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+		return get_object(hdl, true);
+	}
+
+	inline void erase(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+		erase(hdl, false);
+	}
+	inline void erase(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+		erase(hdl, true);
 	}
 
 	void clear() noexcept {
 		//just clear the data, erase everything
-		unsigned i = 0;
+		size_t i = 0;
 		for(auto it = indexes.begin(); it != indexes.end(); ++it, ++i) {
 			if(it->gens.is_valid()) {
-				slot_map_handle<T, Alloc> hdl;
+				ordered_slot_map_weak_handle<T, Mut, Alloc> hdl;
 				hdl.map = this;
 				hdl.idx = std::distance(indexes.begin(), it);
-				hdl.gen = it->gens.increment_generation();
+				hdl.gen = it->gens.increment_generation(true);
 
 				erase(hdl);
 			}
 			if(i == indexes.size())
-				indexes[i].next = 0;
+				indexes[i].unn.next = 0;
 			else
-				indexes[i].next = i + 1;
+				indexes[i].unn.next = i + 1;
 		}
 
 		firstslot = &indexes[0];
@@ -881,24 +1069,24 @@ public:
 	void defrag() noexcept {
 		//order the allocations
 		bool set = false;
-		unsigned last = 0;
+		size_t last = 0;
 
 		firstslot = 0;
 		lastslot = 0;
 
-		for(unsigned i = 0; i < indexes.size(); ++i)
+		for(size_t i = 0; i < indexes.size(); ++i)
 			if(!indexes[i].gens.is_valid()) {
 				lastslot = &indexes[i];
 				if(!set)
 					firstslot = &indexes[i];
 				else
-					indexes[last].next = i;
+					indexes[last].unn.next = i;
 
 				last = i;
 				set = true;
 			}
 		if(set)
-			indexes[last].next = 0;
+			indexes[last].unn.next = 0;
 	}
 };
 
