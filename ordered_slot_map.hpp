@@ -1125,7 +1125,7 @@ public:
 		lastslot = &indexes[indexes.size() - 1];
 		unlock();
 	}
-	void defrag() noexcept {
+	void defragment() noexcept {
 		lock();
 		//order the allocations
 		bool set = false;

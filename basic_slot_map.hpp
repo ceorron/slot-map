@@ -43,6 +43,15 @@ template<typename T>
 struct basic_slot {
 	bool valid = false;
 	alignas(alignof(T)) char obj[sizeof(T)];
+
+	basic_slot() = default;
+	basic_slot(basic_slot&& rhs) {
+		valid = std::move(valid);
+		if(valid)
+			new ((T*)obj) T(*(T*)rhs.obj);
+
+		rhs.valid = false;
+	}
 };
 
 }
@@ -799,6 +808,52 @@ public:
 				it->valid = false;
 				((T*)it->obj)->~T();
 			}
+		unlock();
+	}
+	void defragment() noexcept {
+		lock();
+
+		//if full don't defragment
+		if(idxcount == idxs.size())
+			return;
+
+		//move object to dense positions in items
+		size_t idxitem = 0;
+		size_t idxidx = 0;
+		auto it1 = items.begin();
+		auto it2 = idxs.begin();
+		for(; it1 != items.end() && it2 != idxs.end(); ++it1) {
+			if(it1->valid == false) {
+				//empty valid slot
+				bool found = false;
+				size_t pos = std::distance(items.begin(), it1);
+				for(; it2 != idxs.end(); ++it2) {
+					//can we move this
+					if(it2->count > 0 && it2->idx > pos) {
+						//do the move
+						new (&*it1) slot_internal::basic_slot<T>(std::move(items[it2->idx]));
+
+						//change the index to point to the correct position
+						it2->idx = pos;
+
+						//move to next
+						++it2;
+						found = true;
+						break;
+					}
+				}
+				if(!found)
+					nextitem = pos;
+			}
+		}
+
+		//find the first invalid for nextitem and nextidx
+		for(unsigned i = 0; i < idxs.size(); ++i)
+			if(idxs[i].count == 0) {
+				nextidx = i;
+				break;
+			}
+
 		unlock();
 	}
 

@@ -6,7 +6,10 @@ Features [all slot maps]
  - iterate over full map, fast as contiguous only storage
  - basic_slot_map replaced by slot_map (faster, smaller memory usage), kept as faster in certain cases
 
-Features [ordered slot map only]
+Features [ordered_slot_map/slot_map only]
+ - weak and strong ownership handles for shared pointer like behavior
+
+Features [ordered_slot_map only]
  - ordered_slot_map keeps a vector of ordered items, slower insert O(log n)
  - iteration happens over ordered list of items, ordered using less-than (<) operator or given comparison function
  - insert/erase invalidates raw pointers/iterators but not other handles (like other slot maps)
