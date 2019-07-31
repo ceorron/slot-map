@@ -414,14 +414,10 @@ struct slot_map_handle : slot_internal::internal_slot_map_handle<T, Mut, Alloc> 
 	friend struct slot_map<T, Mut, Alloc>;
 
 	slot_map_handle(const slot_map_handle& rhs) {
-		const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp), false))
-			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+		new (this) slot_map_handle((const slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs);
 	}
 	slot_map_handle(slot_map_handle&& rhs) {
-		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
+		new (this) slot_map_handle(std::move((slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs));
 	}
 
 	slot_map_handle(const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& rhs) {
@@ -430,31 +426,15 @@ struct slot_map_handle : slot_internal::internal_slot_map_handle<T, Mut, Alloc> 
 	}
 	slot_map_handle(slot_internal::internal_slot_map_handle<T, Mut, Alloc>&& rhs) {
 		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
 	}
 
-	slot_map_handle& operator=(const slot_map_handle& rhs) {
-		if(this == &rhs)
-			return *this;
-
-		this->~slot_map_handle();
-
+	inline slot_map_handle& operator=(const slot_map_handle& rhs) {
 		const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp), false))
-			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-		return *this;
+		return *this = const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp);
 	}
-	slot_map_handle& operator=(slot_map_handle&& rhs) {
-		if(this == &rhs)
-			return *this;
-
-		this->~slot_map_handle();
-
-		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
-		return *this;
+	inline slot_map_handle& operator=(slot_map_handle&& rhs) {
+		slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		return *this = std::move(tmp);
 	}
 
 	slot_map_handle& operator=(const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& rhs) {
@@ -516,14 +496,10 @@ struct slot_map_weak_handle : slot_internal::internal_slot_map_handle<T, Mut, Al
 	friend struct slot_map<T, Mut, Alloc>;
 
 	slot_map_weak_handle(const slot_map_weak_handle& rhs) {
-		const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp), true))
-			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
+		new (this) slot_map_weak_handle((const slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs);
 	}
 	slot_map_weak_handle(slot_map_weak_handle&& rhs) {
-		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
+		new (this) slot_map_weak_handle(std::move((slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs));
 	}
 
 	slot_map_weak_handle(const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& rhs) {
@@ -532,31 +508,15 @@ struct slot_map_weak_handle : slot_internal::internal_slot_map_handle<T, Mut, Al
 	}
 	slot_map_weak_handle(slot_internal::internal_slot_map_handle<T, Mut, Alloc>&& rhs) {
 		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
 	}
 
-	slot_map_weak_handle& operator=(const slot_map_weak_handle& rhs) {
-		if(this == &rhs)
-			return *this;
-
-		this->~slot_map_weak_handle();
-
+	inline slot_map_weak_handle& operator=(const slot_map_weak_handle& rhs) {
 		const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp), true))
-			*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-		return *this;
+		return *this = const_cast<slot_internal::internal_slot_map_handle<T, Mut, Alloc>&>(tmp);
 	}
-	slot_map_weak_handle& operator=(slot_map_weak_handle&& rhs) {
-		if(this == &rhs)
-			return *this;
-
-		this->~slot_map_weak_handle();
-
-		*(slot_internal::internal_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_slot_map_handle<T, Mut, Alloc>&)rhs;
-
-		rhs.clear();
-		return *this;
+	inline slot_map_weak_handle& operator=(slot_map_weak_handle&& rhs) {
+		slot_internal::internal_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		return *this = std::move(tmp);
 	}
 
 	slot_map_weak_handle& operator=(const slot_internal::internal_slot_map_handle<T, Mut, Alloc>& rhs) {
