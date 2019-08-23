@@ -28,12 +28,13 @@
 #include <limits>
 #include <vector>
 
+#include "slot_map_moon.hpp"
 #include "empty_mutex.hpp"
 #include "generation_data.hpp"
 
 namespace std {
 
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map;
 
 namespace slot_internal {
@@ -96,27 +97,28 @@ struct ordered_slot {
 
 }
 
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_iterator;
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_const_iterator;
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_reverse_iterator;
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_const_reverse_iterator;
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct ordered_slot_map_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator itr;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
-	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator& it)
 		: itr(it)
@@ -166,29 +168,30 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct ordered_slot_map_const_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator itr;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
-	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_const_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator& it)
 		: itr(it)
@@ -238,29 +241,30 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct ordered_slot_map_reverse_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator itr;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
-	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_reverse_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator& it)
 		: itr(it)
@@ -310,29 +314,30 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
+	inline operator ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator(itr));
 	}
 };
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct ordered_slot_map_const_reverse_iterator {
 private:
 	typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator itr;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
-	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_const_reverse_iterator(const typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_reverse_iterator& it)
 		: itr(it)
@@ -382,32 +387,32 @@ public:
 		return itr >= rhs.itr;
 	}
 
-	inline operator ordered_slot_map_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
+	inline operator ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::iterator(itr));
 	}
-	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_const_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
+	inline operator ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::const_iterator(itr));
 	}
-	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc>() const {
-		return ordered_slot_map_reverse_iterator<T, Mut, Alloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
+	inline operator ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>() const {
+		return ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>(typename std::vector<slot_internal::ordered_slot<T>, Alloc>::reverse_iterator(itr));
 	}
 };
 
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_weak_handle;
-template<typename T, typename Mut, typename Alloc>
+template<typename T, typename Mut, typename Alloc, typename MoonAlloc>
 struct ordered_slot_map_handle;
 
 namespace slot_internal {
 
-template<typename T, typename Mut, typename Alloc>
+template<typename Mut>
 struct internal_ordered_slot_map_handle {
-	ordered_slot_map<T, Mut, Alloc>* map = 0;
+	slot_map_moon<Mut>* moon = 0;
 	size_t idx = 0;
 	size_t gen = 0;
 
-	inline void clear() {
-		map = 0;
+	void clear() {
+		moon = 0;
 		idx = 0;
 		gen = 0;
 	}
@@ -417,195 +422,201 @@ struct internal_ordered_slot_map_handle {
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
-struct ordered_slot_map_handle : slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc> {
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
+struct ordered_slot_map_handle : slot_internal::internal_ordered_slot_map_handle<Mut> {
 	ordered_slot_map_handle() = default;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_handle(const ordered_slot_map_handle& rhs) {
-		new (this) ordered_slot_map_handle((const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs);
+		new (this) slot_internal::internal_ordered_slot_map_handle<Mut>((const slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs);
 	}
 	ordered_slot_map_handle(ordered_slot_map_handle&& rhs) {
-		new (this) ordered_slot_map_handle(std::move((slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs));
+		new (this) slot_internal::internal_ordered_slot_map_handle<Mut>(std::move((slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs));
 	}
 
-	ordered_slot_map_handle(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), false))
-			*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+	ordered_slot_map_handle(const slot_internal::internal_ordered_slot_map_handle<Mut>& rhs) {
+		if(rhs.moon && ordered_slot_map<T, Mut, Alloc, MoonAlloc>::increment_handle_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(rhs), false))
+			*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 	}
-	ordered_slot_map_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
-		*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+	ordered_slot_map_handle(slot_internal::internal_ordered_slot_map_handle<Mut>&& rhs) {
+		*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 	}
 
 	inline ordered_slot_map_handle& operator=(const ordered_slot_map_handle& rhs) {
-		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		return *this = const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp);
+		const slot_internal::internal_ordered_slot_map_handle<Mut>& tmp = rhs;
+		return *this = const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(tmp);
 	}
 	inline ordered_slot_map_handle& operator=(ordered_slot_map_handle&& rhs) {
-		slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		slot_internal::internal_ordered_slot_map_handle<Mut>& tmp = rhs;
 		return *this = std::move(tmp);
 	}
 
-	ordered_slot_map_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+	ordered_slot_map_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<Mut>& rhs) {
 		if(this == &rhs)
 			return *this;
 
 		this->~ordered_slot_map_handle();
 
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), false))
-			*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+		if(rhs.moon && ordered_slot_map<T, Mut, Alloc, MoonAlloc>::increment_handle_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(rhs), false))
+			*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 		return *this;
 	}
-	ordered_slot_map_handle& operator=(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+	ordered_slot_map_handle& operator=(slot_internal::internal_ordered_slot_map_handle<Mut>&& rhs) {
 		if(this == &rhs)
 			return *this;
 
 		this->~ordered_slot_map_handle();
 
-		*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+		*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 
 		rhs.clear();
 		return *this;
 	}
 
 	~ordered_slot_map_handle() {
-		if(this->map)
-			this->map->decrement_handle(*this, false);
+		if(this->moon)
+			ordered_slot_map<T, Mut, Alloc, MoonAlloc>::decrement_handle_external(*this, false);
 		this->clear();
 	}
 
 	inline T& operator*() {
-		return *this->map->get_object(*this);
+		return *ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, false);
 	}
 	inline T* operator->() {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, false);
 	}
 
 	inline const T& operator*() const {
-		return const_cast<const T&>(*this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+		return const_cast<const T&>(*ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(*this), false));
 	}
 	inline const T* operator->() const {
-		return const_cast<const T*>(this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+		return const_cast<const T*>(ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(*this), false));
 	}
 
 	inline operator T*() {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, false);
 	}
 	inline operator const T*() const {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, false);
 	}
 };
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
-struct ordered_slot_map_weak_handle : slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc> {
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
+struct ordered_slot_map_weak_handle : slot_internal::internal_ordered_slot_map_handle<Mut> {
 	ordered_slot_map_weak_handle() = default;
 
-	friend struct ordered_slot_map<T, Mut, Alloc>;
+	friend struct ordered_slot_map<T, Mut, Alloc, MoonAlloc>;
 
 	ordered_slot_map_weak_handle(const ordered_slot_map_weak_handle& rhs) {
-		new (this) ordered_slot_map_weak_handle((const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs);
+		new (this) slot_internal::internal_ordered_slot_map_handle<Mut>((const slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs);
 	}
 	ordered_slot_map_weak_handle(ordered_slot_map_weak_handle&& rhs) {
-		new (this) ordered_slot_map_weak_handle(std::move((slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs));
+		new (this) slot_internal::internal_ordered_slot_map_handle<Mut>(std::move((slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs));
 	}
 
-	ordered_slot_map_weak_handle(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), true))
-			*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+	ordered_slot_map_weak_handle(const slot_internal::internal_ordered_slot_map_handle<Mut>& rhs) {
+		if(rhs.moon && ordered_slot_map<T, Mut, Alloc, MoonAlloc>::increment_handle_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(rhs), true))
+			*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 	}
-	ordered_slot_map_weak_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
-		*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+	ordered_slot_map_weak_handle(slot_internal::internal_ordered_slot_map_handle<Mut>&& rhs) {
+		*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 	}
 
 	inline ordered_slot_map_weak_handle& operator=(const ordered_slot_map_weak_handle& rhs) {
-		const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
-		return *this = const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(tmp);
+		const slot_internal::internal_ordered_slot_map_handle<Mut>& tmp = rhs;
+		return *this = const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(tmp);
 	}
 	inline ordered_slot_map_weak_handle& operator=(ordered_slot_map_weak_handle&& rhs) {
-		slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& tmp = rhs;
+		slot_internal::internal_ordered_slot_map_handle<Mut>& tmp = rhs;
 		return *this = std::move(tmp);
 	}
 
-	ordered_slot_map_weak_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& rhs) {
+	ordered_slot_map_weak_handle& operator=(const slot_internal::internal_ordered_slot_map_handle<Mut>& rhs) {
 		if(this == &rhs)
 			return *this;
 
 		this->~ordered_slot_map_weak_handle();
 
-		if(rhs.map && rhs.map->increment_handle(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(rhs), true))
-			*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+		if(rhs.moon && ordered_slot_map<T, Mut, Alloc, MoonAlloc>::increment_handle_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(rhs), true))
+			*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 		return *this;
 	}
-	ordered_slot_map_weak_handle& operator=(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&& rhs) {
+	ordered_slot_map_weak_handle& operator=(slot_internal::internal_ordered_slot_map_handle<Mut>&& rhs) {
 		if(this == &rhs)
 			return *this;
 
 		this->~ordered_slot_map_weak_handle();
 
-		*(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>*)this = (slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&)rhs;
+		*(slot_internal::internal_ordered_slot_map_handle<Mut>*)this = (slot_internal::internal_ordered_slot_map_handle<Mut>&)rhs;
 
 		rhs.clear();
 		return *this;
 	}
 
 	~ordered_slot_map_weak_handle() {
-		if(this->map)
-			this->map->decrement_handle(*this, true);
+		if(this->moon)
+			ordered_slot_map<T, Mut, Alloc, MoonAlloc>::decrement_handle_external(*this, true);
 		this->clear();
 	}
 
 	inline T& operator*() {
-		return *this->map->get_object(*this);
+		return *ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, true);
 	}
 	inline T* operator->() {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, true);
 	}
 
 	inline const T& operator*() const {
-		return const_cast<const T&>(*this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+		return const_cast<const T&>(*ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(*this), true));
 	}
 	inline const T* operator->() const {
-		return const_cast<const T*>(this->map->get_object(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(*this)));
+		return const_cast<const T*>(ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(*this), true));
 	}
 
 	inline operator T*() {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, true);
 	}
 	inline operator const T*() const {
-		return this->map->get_object(*this);
+		return ordered_slot_map<T, Mut, Alloc, MoonAlloc>::get_object_external(*this, true);
 	}
 };
 
 
 template<typename T,
 		 typename Mut = slot_internal::empty_mutex,
-		 typename Alloc = std::allocator<T>>
+		 typename Alloc = std::allocator<T>,
+		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct ordered_slot_map {
 private:
 	struct slot_index {
 		slot_internal::generation_data<uint32_t> gens;
 		union slot_data {
-			size_t next;									//used when object doesn't exist to reference the next object to allocate
+			size_t next;								//used when object doesn't exist to reference the next object to allocate
 			size_t idx;									//index into items
 		} unn;
 	};
+
+	typedef typename slot_internal::slot_map_moon<Mut> MoonType;
+
 	size_t count = 0;
-	Mut mut;
+	MoonType* moon = 0;
 	slot_index* firstslot = 0;
 	slot_index* lastslot = 0;
 	std::vector<slot_internal::ordered_slot<T>, Alloc> items;
 	std::vector<slot_index, Alloc> indexes;
 
-	friend struct ordered_slot_map_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc>;
-	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc>;
+	friend struct ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc>;
 
-	friend struct ordered_slot_map_handle<T, Mut, Alloc>;
-	friend struct ordered_slot_map_weak_handle<T, Mut, Alloc>;
+	friend struct ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>;
+	friend struct ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc>;
 
 	void extend(size_t extnd) {
 		if(extnd == 0)
@@ -632,21 +643,94 @@ private:
 			lastslot = &indexes[csze + extnd - 1];
 	}
 
-	void lock() {
-		mut.lock();
+	void initMoon() {
+		MoonAlloc allctr;
+		moon = allctr.allocate(1);
+		new (moon) MoonType();
+		moon->slot_map_ptr = this;
 	}
-	void unlock() {
-		mut.unlock();
+	static void dtorMoon(MoonType* moon) {
+		if(moon) {
+			if(moon->count == 0) {
+				moon->~MoonType();
+				MoonAlloc allctr;
+				allctr.deallocate(moon, 1);
+			} else
+				moon->slot_map_ptr = 0;
+			moon = 0;
+		}
+	}
+	void orphanMoon() {
+		dtorMoon(moon);
+		initMoon();
+	}
+
+	void reset(bool resetmoon) {
+		//do some cleanup
+		count = 0;
+		if(resetmoon)
+			moon = 0;
+		else
+			orphanMoon();
+		firstslot = 0;
+		lastslot = 0;
+		items.clear();
+		indexes.clear();
+
+		if(!resetmoon)
+			extend(10);
 	}
 public:
 	ordered_slot_map(size_t slots = 50) {
+		initMoon();
 		extend(slots);
 	}
-	ordered_slot_map(const ordered_slot_map& rhs) = delete;
-	ordered_slot_map(ordered_slot_map&& rhs) = delete;
+	ordered_slot_map(const ordered_slot_map& rhs) {
+		initMoon();
+		*this = rhs;
+	}
+	ordered_slot_map(ordered_slot_map&& rhs) {
+		*this = std::move(rhs);
+	}
 
-	ordered_slot_map& operator=(const ordered_slot_map& rhs) = delete;
-	ordered_slot_map& operator=(ordered_slot_map&& rhs) = delete;
+	ordered_slot_map& operator=(const ordered_slot_map& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		reset(false);
+		return *this;
+	}
+	ordered_slot_map& operator=(ordered_slot_map&& rhs) {
+		if(this == &rhs)
+			return *this;
+
+		count = std::move(rhs.count);
+		moon = std::move(rhs.moon);
+		firstslot = std::move(rhs.firstslot);
+		lastslot = std::move(rhs.lastslot);
+		items = std::move(rhs.items);
+		indexes = std::move(rhs.indexes);
+
+		rhs.reset(true);
+		return *this;
+	}
+
+	template<typename A>
+	ordered_slot_map clone(std::vector<ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>, A>& out) {
+		//go through all of the values in this, insert them into the rtn result
+		//return all of the handles to these values
+		ordered_slot_map rtn;
+		for(auto it = begin(); it != end(); ++it)
+			out.push_back(rtn.insert(*it));
+		return rtn;
+	}
+
+	void lock() {
+		moon->mut.lock();
+	}
+	void unlock() {
+		moon->mut.unlock();
+	}
 
 	//same as normal vector
 	typedef T value_type;
@@ -657,13 +741,12 @@ public:
 	typedef T const& const_reference;
 	typedef T* pointer;
 	typedef T const* const_pointer;
-	typedef ordered_slot_map_iterator<T, Mut, Alloc> iterator;
-	typedef ordered_slot_map_const_iterator<T, Mut, Alloc> const_iterator;
-	typedef ordered_slot_map_reverse_iterator<T, Mut, Alloc> reverse_iterator;
-	typedef ordered_slot_map_const_reverse_iterator<T, Mut, Alloc> const_reverse_iterator;
-	typedef ordered_slot_map_handle<T, Mut, Alloc> handle;
-	typedef ordered_slot_map_weak_handle<T, Mut, Alloc> weak_handle;
-
+	typedef ordered_slot_map_iterator<T, Mut, Alloc, MoonAlloc> iterator;
+	typedef ordered_slot_map_const_iterator<T, Mut, Alloc, MoonAlloc> const_iterator;
+	typedef ordered_slot_map_reverse_iterator<T, Mut, Alloc, MoonAlloc> reverse_iterator;
+	typedef ordered_slot_map_const_reverse_iterator<T, Mut, Alloc, MoonAlloc> const_reverse_iterator;
+	typedef ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> handle;
+	typedef ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc> weak_handle;
 private:
 	void destruct_object(slot_index* obj) {
 		//remove object
@@ -688,8 +771,7 @@ private:
 		}
 		--count;
 	}
-	bool increment_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
-		lock();
+	bool increment_handle(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
 			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
@@ -697,14 +779,11 @@ private:
 				++tmp.weakcount;
 			else
 				++tmp.strongcount;
-			unlock();
 			return true;
 		}
-		unlock();
 		return false;
 	}
-	void decrement_handle(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
-		lock();
+	void decrement_handle(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj) {
 			slot_internal::generation_data<uint32_t>::counts& tmp = obj->gens.get_generation_count(hdl.gen);
@@ -718,7 +797,6 @@ private:
 				}
 			}
 		}
-		unlock();
 	}
 public:
 
@@ -764,9 +842,9 @@ public:
 
 	// capacity:
 	inline size_type size() const noexcept {
-		lock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->lock();
 		size_type rtn = count;
-		unlock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->unlock();
 		return rtn;
 	}
 	inline size_type max_size() const noexcept {
@@ -783,9 +861,9 @@ public:
 	}
 	inline size_type capacity() const noexcept {
 		//returns the smaller of the two
-		lock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->lock();
 		size_type rtn = items.capacity();
-		unlock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->unlock();
 		return rtn;
 	}
 	void reserve(size_type n) {
@@ -795,9 +873,9 @@ public:
 		unlock();
 	}
 	inline bool empty() const noexcept {
-		lock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->lock();
 		bool rtn = size() == 0;
-		unlock();
+		const_cast<ordered_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->unlock();
 		return rtn;
 	}
 	inline void shrink_to_fit() {
@@ -900,77 +978,85 @@ private:
 		return pos;
 	}
 public:
-	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val) {
+	ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> insert(const T& val) {
 		lock();
 		size_t idx = get_insert_pos(val);
 		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Mut, Alloc> rtn;
-		rtn.map = this;
+		ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> rtn;
+		rtn.moon = moon;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		++moon->count;
+
 		unlock();
 		return rtn;
 	}
 	template<typename Less>
-	ordered_slot_map_handle<T, Mut, Alloc> insert(const T& val, Less comp) {
+	ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> insert(const T& val, Less comp) {
 		lock();
 		size_t idx = get_insert_pos(val, comp);
 		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Mut, Alloc> rtn;
-		rtn.map = this;
+		ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> rtn;
+		rtn.moon = moon;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		++moon->count;
+
 		unlock();
 		return rtn;
 	}
-	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val) {
+	ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> insert(T&& val) {
 		lock();
 		size_t idx = get_insert_pos(std::move(val));
 		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Mut, Alloc> rtn;
-		rtn.map = this;
+		ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> rtn;
+		rtn.moon = moon;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		++moon->count;
+
 		unlock();
 		return rtn;
 	}
 	template<typename Less>
-	ordered_slot_map_handle<T, Mut, Alloc> insert(T&& val, Less comp) {
+	ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> insert(T&& val, Less comp) {
 		lock();
 		size_t idx = get_insert_pos(std::move(val), comp);
 		size_t itemPos = get_next_free(idx);
 
 		items[idx].backidx = itemPos;
 
-		ordered_slot_map_handle<T, Mut, Alloc> rtn;
-		rtn.map = this;
+		ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc> rtn;
+		rtn.moon = moon;
 		rtn.idx = itemPos;
 		rtn.gen = indexes[itemPos].gens.new_generation();
+		++moon->count;
+
 		unlock();
 		return rtn;
 	}
 	template<typename Itr>
-	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end) {
+	std::vector<ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>> insert(Itr begin, Itr end) {
 		lock();
-		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
+		std::vector<ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin));
 		unlock();
 		return rtn;
 	}
 	template<typename Itr, typename Less>
-	std::vector<ordered_slot_map_handle<T, Mut, Alloc>> insert(Itr begin, Itr end, Less comp) {
+	std::vector<ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>> insert(Itr begin, Itr end, Less comp) {
 		lock();
-		std::vector<ordered_slot_map_handle<T, Mut, Alloc>> rtn;
+		std::vector<ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>> rtn;
 		for(; begin != end; ++begin)
 			rtn.push_back(insert(*begin, comp));
 		unlock();
@@ -978,9 +1064,7 @@ public:
 	}
 
 private:
-	slot_index* get_object_internal(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
-		if(hdl.map == 0)
-			return 0;
+	slot_index* get_object_internal(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
 		slot_index& rf = indexes[hdl.idx];
 		//test that the generation matches
 		if(!rf.gens.is_valid() || !rf.gens.match_generation(hdl.gen, weak)) {
@@ -991,72 +1075,88 @@ private:
 		return &rf;
 	}
 
-	inline bool is_valid(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
-		return get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(hdl), weak) != 0;
+	inline bool is_valid(const slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
+		return get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(hdl), weak) != 0;
 	}
-	T* get_object(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+	T* get_object(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj)
 			return &items[obj->unn.idx].obj;
 		return 0;
 	}
-	const T* get_object(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
-		slot_index* obj = get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>&>(hdl), weak);
+	const T* get_object(const slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
+		slot_index* obj = get_object_internal(const_cast<slot_internal::internal_ordered_slot_map_handle<Mut>&>(hdl), weak);
 		if(obj)
 			return &items[obj->unn.idx].obj;
 		return 0;
 	}
 
-	void erase(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc>& hdl, bool weak) {
+	void erase(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
 		slot_index* obj = get_object_internal(hdl, weak);
 		if(obj)
 			destruct_object(obj);
 	}
 public:
 
-	inline bool is_valid(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+	inline bool is_valid(const ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return false;
 		lock();
 		bool rtn = is_valid(hdl, false);
 		unlock();
 		return rtn;
 	}
-	inline bool is_valid(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+	inline bool is_valid(const ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return false;
 		lock();
 		bool rtn = is_valid(hdl, true);
 		unlock();
 		return rtn;
 	}
-	inline T* get_object(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+	inline T* get_object(ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return 0;
 		lock();
 		T* rtn = get_object(hdl, false);
 		unlock();
 		return rtn;
 	}
-	inline T* get_object(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+	inline T* get_object(ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return 0;
 		lock();
 		T* rtn = get_object(hdl, true);
 		unlock();
 		return rtn;
 	}
-	inline const T* get_object(const ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+	inline const T* get_object(const ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return 0;
 		lock();
 		const T* rtn = get_object(hdl, false);
 		unlock();
 		return rtn;
 	}
-	inline const T* get_object(const ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+	inline const T* get_object(const ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return 0;
 		lock();
 		const T* rtn = get_object(hdl, true);
 		unlock();
 		return rtn;
 	}
 
-	inline void erase(ordered_slot_map_handle<T, Mut, Alloc>& hdl) {
+	inline void erase(ordered_slot_map_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return;
 		lock();
 		erase(hdl, false);
 		unlock();
 	}
-	inline void erase(ordered_slot_map_weak_handle<T, Mut, Alloc>& hdl) {
+	inline void erase(ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc>& hdl) {
+		if(hdl.moon != moon)
+			return;
 		lock();
 		erase(hdl, true);
 		unlock();
@@ -1068,10 +1168,11 @@ public:
 		size_t i = 0;
 		for(auto it = indexes.begin(); it != indexes.end(); ++it, ++i) {
 			if(it->gens.is_valid()) {
-				ordered_slot_map_weak_handle<T, Mut, Alloc> hdl;
-				hdl.map = this;
+				ordered_slot_map_weak_handle<T, Mut, Alloc, MoonAlloc> hdl;
+				hdl.moon = moon;
 				hdl.idx = std::distance(indexes.begin(), it);
 				hdl.gen = it->gens.increment_generation(true);
+				++moon->count;
 
 				erase(hdl);
 			}
@@ -1107,6 +1208,64 @@ public:
 			}
 		if(set)
 			indexes[last].unn.next = 0;
+		unlock();
+	}
+private:
+	static ordered_slot_map<T, Mut, Alloc, MoonAlloc>* getMap(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl) {
+		//get the map and lock this
+		if(hdl.moon == 0)
+			return 0;
+		//does this still point to a valid ordered_slot_map?
+		hdl.moon->mut.lock();
+		if(hdl.moon->slot_map_ptr == 0) {
+			--hdl.moon->count;
+			if(hdl.moon->count == 0) {
+				hdl.moon->mut.unlock();
+				//do cleanup - object already removed remove lingering moon object
+				//remove moon
+				hdl.moon->~MoonType();
+				MoonAlloc allctr;
+				allctr.deallocate(hdl.moon, 1);
+				hdl.clear();
+				return 0;
+			}
+			hdl.moon->mut.unlock();
+			hdl.clear();
+			return 0;
+		}
+		return (ordered_slot_map<T, Mut, Alloc, MoonAlloc>*)hdl.moon->slot_map_ptr;
+	}
+	static bool increment_handle_external(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
+		ordered_slot_map<T, Mut, Alloc, MoonAlloc>* map = getMap(hdl);
+		if(map == 0)
+			return false;
+		++hdl.moon->count;
+		bool rtn = map->increment_handle(hdl, weak);
+		map->unlock();
+		return rtn;
+	}
+	static void decrement_handle_external(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
+		ordered_slot_map<T, Mut, Alloc, MoonAlloc>* map = getMap(hdl);
+		if(map == 0)
+			return;
+		--hdl.moon->count;
+		map->decrement_handle(hdl, weak);
+		map->unlock();
+	}
+	static T* get_object_external(slot_internal::internal_ordered_slot_map_handle<Mut>& hdl, bool weak) {
+		ordered_slot_map<T, Mut, Alloc, MoonAlloc>* map = getMap(hdl);
+		if(map == 0)
+			return 0;
+		lock();
+		const T* rtn = map->get_object(hdl, weak);
+		unlock();
+		return rtn;
+	}
+
+public:
+	~ordered_slot_map() {
+		lock();
+		dtorMoon(moon);
 		unlock();
 	}
 };
