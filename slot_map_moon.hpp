@@ -39,3 +39,4 @@ struct slot_map_moon {
 }
 
 }
+

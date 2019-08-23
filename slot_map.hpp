@@ -645,7 +645,7 @@ private:
 		initMoon();
 	}
 
-	void reset(bool resetmoon) {
+	void reset(bool resetmoon, bool dtrMn) {
 		//do some cleanup
 		if(!resetmoon)
 			clear_internal();
@@ -653,8 +653,12 @@ private:
 		count = 0;
 		if(resetmoon)
 			moon = 0;
-		else
-			orphanMoon();
+		else {
+			if(dtrMn)
+				dtorMoon(moon);
+			else
+				orphanMoon();
+		}
 		firstslot = 0;
 		lastslot = 0;
 		items.clear();
@@ -679,12 +683,13 @@ public:
 		if(this == &rhs)
 			return *this;
 
-		reset(false);
+		reset(false, false);
 		return *this;
 	}
 	slot_map& operator=(slot_map&& rhs) {
 		if(this == &rhs)
 			return *this;
+		reset(false, true);
 
 		count = std::move(rhs.count);
 		moon = std::move(rhs.moon);
@@ -692,7 +697,7 @@ public:
 		lastslot = std::move(rhs.lastslot);
 		items = std::move(rhs.items);
 
-		rhs.reset(true);
+		rhs.reset(true, true);
 		return *this;
 	}
 
