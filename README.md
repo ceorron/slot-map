@@ -16,8 +16,9 @@ Features [ordered_slot_map only]
 
 MIT Licence - See Source/License file
 
-NOTE if setting mutex, the mutex needs to be recursive mutex as object destruction may cause recursive lock of internal mutex.
-When iterating over the slot map you need to call lock/unlock around any iteration code, if using slot map in a multithreaded context.
+NOTE if setting the mutex, the mutex needs to be recursive mutex as object destruction may cause recursive lock of internal mutex.
+When iterating over the slot map/or copying the mutex (but not move copy) you need to call lock/unlock around any iteration code, if
+using slot map in a multithreaded context.
 
 # Example use - C++
 
