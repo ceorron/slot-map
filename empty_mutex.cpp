@@ -36,5 +36,3 @@ void empty_mutex::unlock() {}
 }
 
 }
-
-
