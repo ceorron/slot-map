@@ -520,7 +520,7 @@ private:
 		new (moon) MoonType();
 		moon->slot_map_ptr = this;
 	}
-	static void dtorMoon(MoonType* moon) {
+	void dtorMoon() {
 		if(moon) {
 			if(moon->count == 0) {
 				moon->~MoonType();
@@ -532,7 +532,7 @@ private:
 		}
 	}
 	void orphanMoon() {
-		dtorMoon(moon);
+		dtorMoon();
 		initMoon();
 	}
 
@@ -546,7 +546,7 @@ private:
 			moon = 0;
 		else {
 			if(dtrMn)
-				dtorMoon(moon);
+				dtorMoon();
 			else
 				orphanMoon();
 		}
@@ -733,10 +733,7 @@ public:
 		unlock();
 	}
 	inline bool empty() const noexcept {
-		const_cast<basic_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->lock();
-		bool rtn = size() == 0;
-		const_cast<basic_slot_map<T, Mut, Alloc, MoonAlloc>*>(this)->unlock();
-		return rtn;
+		return size() == 0;
 	}
 	void shrink_to_fit() {
 		lock();
@@ -1024,8 +1021,8 @@ public:
 	~basic_slot_map() {
 		lock();
 		clear_internal();
-		dtorMoon(moon);
 		unlock();
+		dtorMoon();
 	}
 };
 
