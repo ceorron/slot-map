@@ -78,9 +78,9 @@ void slot_map_test() {
 	cout << "--------------------" << endl;
 
 	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
-	auto hdl3 = map.insert(slot_data{100, 90});
+	auto hdl3 = map.insert(slot_data{200, 100});
 	auto hdl4 = map.insert(slot_data{150, 95});
-	auto hdl5 = map.insert(slot_data{200, 100});
+	auto hdl5 = map.insert(slot_data{100, 90});
 
 	for(auto it = map.begin(); it != map.end(); ++it) {
 		cout << "it->a : " << it->a << endl;
@@ -130,13 +130,31 @@ void ordered_slot_map_test() {
 	//slot_map tests
 	ordered_slot_map<slot_data> map;
 
-	ordered_slot_map<slot_data>::handle hdl1 = map.insert(slot_data{50, 85});
+	//set ownership
+	ordered_slot_map<slot_data>::handle hdl1 = map.insert(slot_data{50, 85}, true);
 	if(map.is_valid(hdl1)) {
 		slot_data& itm = *map.get_object(hdl1);
 
 		cout << "itm.a : " << itm.a << endl;
 		cout << "itm.b : " << itm.b << endl;
 	}
+
+	cout << "--------------------" << endl;
+
+	//ownership
+	if(map.owns(hdl1))
+		cout << "map owns hdl1" << endl;
+
+	map.release(hdl1);
+
+	if(!map.owns(hdl1))
+		cout << "map released hdl1" << endl;
+
+	if(map.own(hdl1))
+		cout << "map takes ownership of hdl1" << endl;
+
+	//release for cleanup
+	map.release(hdl1);
 
 	cout << "--------------------" << endl;
 
@@ -151,9 +169,9 @@ void ordered_slot_map_test() {
 	cout << "--------------------" << endl;
 
 	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
-	auto hdl3 = map.insert(slot_data{100, 90});
+	auto hdl3 = map.insert(slot_data{200, 100});
 	auto hdl4 = map.insert(slot_data{150, 95});
-	auto hdl5 = map.insert(slot_data{200, 100});
+	auto hdl5 = map.insert(slot_data{100, 90});
 
 	for(auto it = map.begin(); it != map.end(); ++it) {
 		cout << "it->a : " << it->a << endl;
@@ -224,9 +242,9 @@ void basic_slot_map_test() {
 	cout << "--------------------" << endl;
 
 	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
-	auto hdl3 = map.insert(slot_data{100, 90});
+	auto hdl3 = map.insert(slot_data{200, 100});
 	auto hdl4 = map.insert(slot_data{150, 95});
-	auto hdl5 = map.insert(slot_data{200, 100});
+	auto hdl5 = map.insert(slot_data{100, 90});
 
 	for(auto it = map.begin(); it != map.end(); ++it) {
 		cout << "it->a : " << it->a << endl;
@@ -277,9 +295,9 @@ void basic_ordered_slot_map_test() {
 	cout << "--------------------" << endl;
 
 	//make some object handles, note we must have a handle to an item or else the item would get instantly destroyed
-	auto hdl3 = map.insert(slot_data{100, 90});
+	auto hdl3 = map.insert(slot_data{200, 100});
 	auto hdl4 = map.insert(slot_data{150, 95});
-	auto hdl5 = map.insert(slot_data{200, 100});
+	auto hdl5 = map.insert(slot_data{100, 90});
 
 	for(auto it = map.begin(); it != map.end(); ++it) {
 		cout << "it->a : " << it->a << endl;

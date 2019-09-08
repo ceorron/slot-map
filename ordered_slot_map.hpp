@@ -67,6 +67,8 @@ struct ordered_slot_map_object {
 	Mut mtx;
 	alignas(alignof(T)) char obj[sizeof(T)];
 
+	ordered_slot_map_object() = default;
+
 	//for completeness
 	ordered_slot_map_object(const ordered_slot_map_object& rhs) {
 		*(T*)obj = *(T*)rhs.obj;
@@ -148,6 +150,7 @@ struct internal_ordered_slot_map_handle {
 		ptr->moon->mtx.unlock();
 
 		//actually do destruction
+		ptr->moon = 0;
 		((T*)ptr->obj)->~T();
 	}
 	void clear_internal(bool strong) {
@@ -922,18 +925,26 @@ private:
 	friend struct slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>;
 
 	void initMoon() {
+		//set the moon
 		MoonAlloc allctr;
 		moon = allctr.allocate(1);
 		new (moon) MoonType();
 		moon->map = this;
 	}
 	void dtorMoon() {
+		//destruct the moon if we have one
 		if(moon) {
 			moon->~MoonType();
 			MoonAlloc allctr;
 			allctr.deallocate(moon, 1);
 			moon = 0;
 		}
+	}
+	void moveMoon(ordered_slot_map& rhs) {
+		//steal the moon from this, used in move copy/construct
+		dtorMoon();
+		moon = std::move(rhs.moon);
+		rhs.moon = 0;
 	}
 
 public:
@@ -945,7 +956,6 @@ public:
 		*this = rhs;
 	}
 	ordered_slot_map(ordered_slot_map&& rhs) {
-		initMoon();
 		//TODO maybe need to orphan moon
 		*this = std::move(rhs);
 	}
@@ -972,20 +982,13 @@ public:
 		//clear this
 		clear_internal();
 
+		//move the moon
+		moveMoon(rhs);
+
 		//move everything across
 		store = std::move(store);
 		objs = std::move(objs);
 		return *this;
-	}
-
-	template<typename A>
-	ordered_slot_map clone(std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, A>& out) {
-		//go through all of the values in this, insert them into the rtn result
-		//return all of the handles to these values
-		ordered_slot_map rtn;
-		for(auto it = begin(); it != end(); ++it)
-			out.push_back(rtn.insert(*it));
-		return rtn;
 	}
 
 	void lock() {
@@ -1018,6 +1021,7 @@ private:
 		ptr->weakcount += ptr->strongcount;
 		ptr->strongcount = 0;
 		//call destructor on this!
+		ptr->moon = 0;
 		((T*)ptr->obj)->~T();
 		ptr->mtx.unlock();
 	}
@@ -1089,6 +1093,7 @@ private:
 			typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::iterator out;
 			ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc> tmp;
 			tmp.ptr = ptr;
+			++ptr->strongcount;
 			slot_internal::binary_search(store.begin(), store.end(), tmp,
 							[](const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& a,
 							   const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& b) {
@@ -1180,6 +1185,7 @@ private:
 		//allocate a new object, copy everything across
 		ObjAlloc allctr;
 		slot_internal::ordered_slot_map_object<T, Mut>* nw = allctr.allocate(1);
+		new (nw) slot_internal::ordered_slot_map_object<T, Mut>();
 		nw->strongcount = 1;
 		nw->moon = moon;
 		new (nw->obj) T(val);
@@ -1194,6 +1200,7 @@ private:
 		//allocate a new object, copy everything across
 		ObjAlloc allctr;
 		slot_internal::ordered_slot_map_object<T, Mut>* nw = allctr.allocate(1);
+		new (nw) slot_internal::ordered_slot_map_object<T, Mut>();
 		nw->strongcount = 1;
 		nw->moon = moon;
 		new (nw->obj) T(std::move(val));
@@ -1277,8 +1284,8 @@ private:
 			return false;
 		bool found = false;
 		if(obj->moon == moon) {
-			typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::iterator out;
-			found = slot_internal::binary_search(store.begin(), store.end(), (ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
+			typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::const_iterator out;
+			found = slot_internal::binary_search(store.begin(), store.end(), (const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
 						[](const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& a,
 						   const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& b) {
 							return a.ptr < b.ptr;
@@ -1302,8 +1309,8 @@ public:
 		const_cast<ordered_slot_map<T, Mut, Alloc, ObjAlloc, MoonAlloc>*>(this)->lock();
 		bool found = false;
 		if(obj->moon == moon) {
-			typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::iterator out;
-			found = slot_internal::binary_search(store.begin(), store.end(), (ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
+			typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::const_iterator out;
+			found = slot_internal::binary_search(store.begin(), store.end(), (const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
 						[](const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& a,
 						   const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& b) {
 							return a.ptr < b.ptr;
@@ -1334,38 +1341,38 @@ public:
 		return found;
 	}
 private:
-	bool own(slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl, bool strong) {
+	bool own(const slot_internal::internal_ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl, bool strong) {
 		//if we don't own this then don't take ownership
 		typename std::vector<ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>, Alloc>::iterator out;
-		bool found = slot_internal::binary_search(store.begin(), store.end(), (ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
+		bool found = slot_internal::binary_search(store.begin(), store.end(), (const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl,
 						[](const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& a,
 						   const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& b) {
 							return a.ptr < b.ptr;
 						}, out);
 		if(!found) {
 			if(strong)
-				store.insert(out, (ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl);
+				store.insert(out, (const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl);
 			else
-				store.insert(out, (ordered_slot_map_weak_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl);
+				store.insert(out, (const ordered_slot_map_weak_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>&)hdl);
 		}
-		return !found;
+		return true;
 	}
 public:
-	bool own(ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl) {
+	bool own(const ordered_slot_map_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl) {
 		slot_internal::ordered_slot_map_object<T, Mut>* obj = hdl.get_obj_nolock();
 		if(obj == 0)
 			return false;
 		lock();
-		bool rslt = (obj->moon != moon ? 0 : own(hdl, true));
+		bool rslt = (obj->moon != moon ? false : own(hdl, true));
 		unlock();
 		return rslt;
 	}
-	bool own(ordered_slot_map_weak_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl) {
+	bool own(const ordered_slot_map_weak_handle<T, Mut, Alloc, ObjAlloc, MoonAlloc>& hdl) {
 		slot_internal::ordered_slot_map_object<T, Mut>* obj = hdl.get_obj_nolock();
 		if(obj == 0)
 			return false;
 		lock();
-		bool rslt = (obj->moon != moon ? 0 : own(hdl, false));
+		bool rslt = (obj->moon != moon ? false : own(hdl, false));
 		unlock();
 		return rslt;
 	}
