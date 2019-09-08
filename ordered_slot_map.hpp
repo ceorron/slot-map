@@ -956,7 +956,6 @@ public:
 		*this = rhs;
 	}
 	ordered_slot_map(ordered_slot_map&& rhs) {
-		//TODO maybe need to orphan moon
 		*this = std::move(rhs);
 	}
 
