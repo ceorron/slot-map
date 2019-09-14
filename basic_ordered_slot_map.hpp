@@ -82,6 +82,14 @@ private:
 		: itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_ordered_slot_map_iterator() = default;
 	inline T& operator*() {
 		return itr->obj;
@@ -155,6 +163,14 @@ private:
 		: itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_ordered_slot_map_const_iterator() = default;
 	inline const T& operator*() {
 		return itr->obj;
@@ -228,6 +244,14 @@ private:
 		: itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_ordered_slot_map_reverse_iterator() = default;
 	inline T& operator*() {
 		return itr->obj;
@@ -301,6 +325,14 @@ private:
 		: itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_ordered_slot_map_const_reverse_iterator() = default;
 	inline const T& operator*() {
 		return itr->obj;

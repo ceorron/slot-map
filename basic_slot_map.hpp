@@ -72,7 +72,7 @@ template<typename T,
 		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct basic_slot_map_iterator {
 private:
-	basic_slot_map<T, Mut, Alloc, MoonAlloc>* map;
+	basic_slot_map<T, Mut, Alloc, MoonAlloc>* map = 0;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::iterator itr;
 
 	friend struct basic_slot_map<T, Mut, Alloc, MoonAlloc>;
@@ -86,6 +86,14 @@ private:
 		: map(mp), itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_slot_map_iterator() = default;
 	inline T& operator*() {
 		return *(T*)itr->obj;
@@ -154,7 +162,7 @@ template<typename T,
 		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct basic_slot_map_const_iterator {
 private:
-	const basic_slot_map<T, Mut, Alloc, MoonAlloc>* map;
+	const basic_slot_map<T, Mut, Alloc, MoonAlloc>* map = 0;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_iterator itr;
 
 	friend struct basic_slot_map<T, Mut, Alloc, MoonAlloc>;
@@ -168,6 +176,14 @@ private:
 		: map(mp), itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_slot_map_const_iterator() = default;
 	inline T& operator*() {
 		return *(T*)itr->obj;
@@ -236,7 +252,7 @@ template<typename T,
 		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct basic_slot_map_reverse_iterator {
 private:
-	basic_slot_map<T, Mut, Alloc, MoonAlloc>* map;
+	basic_slot_map<T, Mut, Alloc, MoonAlloc>* map = 0;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::reverse_iterator itr;
 
 	friend struct basic_slot_map<T, Mut, Alloc, MoonAlloc>;
@@ -250,6 +266,14 @@ private:
 		: map(mp), itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_slot_map_reverse_iterator() = default;
 	inline T& operator*() {
 		return *(T*)itr->obj;
@@ -318,7 +342,7 @@ template<typename T,
 		 typename MoonAlloc = std::allocator<slot_internal::slot_map_moon<Mut>>>
 struct basic_slot_map_const_reverse_iterator {
 private:
-	const basic_slot_map<T, Mut, Alloc, MoonAlloc>* map;
+	const basic_slot_map<T, Mut, Alloc, MoonAlloc>* map = 0;
 	typename std::vector<slot_internal::basic_slot<T>, Alloc>::const_reverse_iterator itr;
 
 	friend struct basic_slot_map<T, Mut, Alloc, MoonAlloc>;
@@ -332,6 +356,14 @@ private:
 		: map(mp), itr(it)
 	{}
 public:
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T& reference;
+	typedef T const& const_reference;
+	typedef T* pointer;
+	typedef T const* const_pointer;
+
 	basic_slot_map_const_reverse_iterator() = default;
 	inline T& operator*() {
 		return *(T*)itr->obj;
