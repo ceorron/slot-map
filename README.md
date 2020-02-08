@@ -1,4 +1,4 @@
-# slot-map - std like reference counted slot map implementation
+# slot-map - stl like reference counted slot map implementation
 
 Features [all slot maps]
  - fast, constant time object lookup/erase/insert O(1) using array indexes, minimal overhead
