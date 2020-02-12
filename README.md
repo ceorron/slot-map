@@ -21,7 +21,7 @@ Features [ordered_slot_map only]
  - ordered_slot_map gives ownership options (on insert set owner = true) this gives a number of other functions
     * bool release(handle) : if this slot map owns the given handle the slot map gives up ownership, returns if this handle was released
     * bool own(handle) : instruct the ordered_slot_map to take ownership of the handle, returns if the operation was successful (it is not successful if the object no longer exists (handle is invalid) or the handle references an object that isn't in this ordered_slot_map)
-    * bool owns(handle) : returns if this ordered_slot_map owns the given handle
+    * bool owns(handle) : returns true if this ordered_slot_map owns the given handle
 
 MIT Licence - See Source/License file
 
